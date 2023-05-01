@@ -388,7 +388,12 @@ class GStreamerPlayer(BasePlayer, GStreamerPluginHandler):
         """
 
         if self.bin:
+            top=self.bin.get_property('audio-sink')
+            print_('Top pipeline')
+            for line in bin_debug([top]):
+                print_(line)
             # self.bin is just a wrapper, so get the real one
+            print('Embedded pipeline')
             for line in bin_debug([self.bin.bin]):
                 print_(line)
         else:
