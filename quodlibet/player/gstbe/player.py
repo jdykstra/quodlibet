@@ -438,11 +438,7 @@ class GStreamerPlayer(BasePlayer, GStreamerPluginHandler):
             resample = self._make("audioresample", None)
             pipeline = [filt, eq, conv, resample] + pipeline
 
-        # playbin2 has started to control the volume through pulseaudio,
-        # which means the volume property can change without us noticing.
-        # Use our own volume element for now until this works with PA.
-        self._int_vol_element = self._make("volume", None)
-        pipeline.insert(0, self._int_vol_element)
+        #  JWD - Don't add a volume element to the pipeline.
 
         # Get all plugin elements and append audio converters.
         # playbin already includes one at the end
@@ -822,7 +818,7 @@ class GStreamerPlayer(BasePlayer, GStreamerPluginHandler):
                 self._ext_mute_element.set_property("mute", v)
             else:
                 if self.bin:
-                    self._int_vol_element.set_property("mute", v)
+                    return
         else:
             raise AttributeError
 
