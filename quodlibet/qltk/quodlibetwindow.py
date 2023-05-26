@@ -968,7 +968,9 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
         ag.add_action_with_accel(act, "<shift>space")
 
         # access point for the tray icon
+        # JWD Default to stop after the current song.
         self.stop_after = act
+        self.stop_after.set_active(True)
 
         act = Action(name="Shortcuts", label=_("_Keyboard Shortcuts"))
         act.connect("activate", self.__keyboard_shortcuts)
@@ -1181,7 +1183,6 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
 
         if self.stop_after.get_active():
             player.paused = True
-            self.stop_after.set_active(False)
 
     def __song_changed(self, library, songs, player):
         if player.info in songs:
