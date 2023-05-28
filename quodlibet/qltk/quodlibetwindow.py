@@ -961,8 +961,8 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
 
         act = Action(name="Stop", label=_("Stop"),
                      icon_name=Icons.MEDIA_PLAYBACK_STOP)
-        act.connect("activate", self.__stop)
-        ag.add_action(act)
+        act.connect('activate', self.__stop)
+        ag.add_action_with_accel(act, "<Primary>s")
 
         act = ToggleAction(name="StopAfter", label=_("Stop After This Song"))
         ag.add_action_with_accel(act, "<shift>space")
