@@ -17,7 +17,7 @@ class AboutDialog(Gtk.AboutDialog):
         super().__init__()
         self.set_transient_for(parent)
         self.set_program_name(app.name)
-        self.set_version(quodlibet.get_build_description())
+        self.set_version(quodlibet.get_build_description() + " " + const.JWD_VERSION)
         self.set_authors(const.AUTHORS)
         self.set_artists(const.ARTISTS)
         self.set_logo_icon_name(app.icon_name)

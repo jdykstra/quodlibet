@@ -64,7 +64,8 @@ class MinVersions:
 
 
 VERSION_TUPLE = Version("", 4, 7, -1)
-VERSION = str(VERSION_TUPLE)
+JWD_VERSION = "Customized 2"
+VERSION = str(VERSION_TUPLE) + " " + JWD_VERSION
 
 QL_NAMESPACE = "https://quodlibet.github.io"
 """A namespace for registering things against e.g. XMLNS"""
