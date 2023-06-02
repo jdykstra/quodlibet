@@ -64,7 +64,8 @@ class MinVersions:
 
 
 VERSION_TUPLE = Version("", 4, 5, 0)
-VERSION = str(VERSION_TUPLE)
+JWD_VERSION = "Customized 2"
+VERSION = str(VERSION_TUPLE) + " " + JWD_VERSION
 
 # entry point for the user guide / wiki
 _DOCS_BASE_URL = "https://quodlibet.readthedocs.org/en/latest"

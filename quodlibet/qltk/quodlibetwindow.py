@@ -1,7 +1,7 @@
 # Copyright 2004-2005 Joe Wreschnig, Michael Urman, Iñigo Serna
 #           2012 Christoph Reiter
 #           2012-2017 Nick Boultbee
-#           2017 Uriel Zajaczkovski
+#           2017 Uriel Zajaczkovskia
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
