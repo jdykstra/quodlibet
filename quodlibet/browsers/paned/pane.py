@@ -68,18 +68,6 @@ class Pane(AllTreeView):
                 cell.set_property('text', text)
 
         column.set_cell_data_func(render, text_cdf)
-
-        render_count = Gtk.CellRendererText()
-        render_count.set_property('xalign', 1.0)
-        column.pack_start(render_count, False)
-
-        def count_cdf(column, cell, model, iter_, data):
-            entry = model.get_value(iter_)
-            markup = entry.get_count_text(self.config)
-            cell.markup = markup
-            cell.set_property('markup', markup)
-
-        column.set_cell_data_func(render_count, count_cdf)
         self.append_column(column)
 
         model = PaneModel(self.config)
