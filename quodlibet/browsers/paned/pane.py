@@ -64,21 +64,6 @@ class Pane(AllTreeView):
             cell.set_property("markup", markup)
 
         column.set_cell_data_func(render, text_cdf)
-
-        render_count = Gtk.CellRendererText()
-        render_count.set_property("xalign", 1.0)
-        render_count.set_property("max-width-chars", 5)
-        column.pack_end(render_count, True)
-        # Tiny columns break too much rendering
-        column.set_min_width(150)
-
-        def count_cdf(column, cell, model, iter_, data):
-            entry = model.get_value(iter_)
-            markup = entry.get_count_markup(self.config)
-            cell.markup = markup
-            cell.set_property("markup", markup)
-
-        column.set_cell_data_func(render_count, count_cdf)
         self.append_column(column)
 
         model = PaneModel(self.config)
