@@ -279,14 +279,6 @@ class TopBar(Gtk.Toolbar):
         info_item.add(box)
         qltk.add_css(self, "GtkToolbar {padding: 3px;}")
 
-        self._pattern_box = Gtk.VBox(spacing=3)
-
-        # song text
-        info_pattern_path = os.path.join(quodlibet.get_user_dir(), "songinfo")
-        text = SongInfo(library.librarian, player, info_pattern_path)
-        self._pattern_box.pack_start(text, True, True, 0)
-        box.pack_start(self._pattern_box, True, True, 0)
-
         # cover image
         self.image = CoverImage(resize=True)
         connect_destroy(player, "song-started", self.__new_song)
@@ -297,7 +289,7 @@ class TopBar(Gtk.Toolbar):
                 app.cover_manager, "cover-changed",
                 self.__song_art_changed, library)
 
-        box.pack_start(Align(self.image, top=3, right=3), False, True, 0)
+        box.pack_end(Align(self.image, border=2), False, True, 0)
 
         # On older Gtk+ (3.4, at least)
         # setting a margin on CoverImage leads to errors and result in the
