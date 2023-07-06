@@ -9,6 +9,7 @@
 # (at your option) any later version.
 
 import os
+import time
 
 from gi.repository import Gtk, Gdk, GLib, Gio, GObject
 from senf import uri2fsn, fsnative, path2fsn
@@ -354,14 +355,25 @@ class StatusBarBox(Gtk.HBox):
     def __init__(self, play_order, queue):
         super().__init__(spacing=6)
         self.pack_start(play_order, False, True, 0)
+
+        # Display the local time, updated every second.
+        self.time_label = Gtk.Label()
+        self.__update_time()
+        self.set_center_widget(self.time_label)
+        GObject.timeout_add_seconds(1, self.__update_time)
+
         self.statusbar = StatusBar(TaskController.default_instance)
-        self.pack_start(self.statusbar, True, True, 0)
+        self.pack_end(self.statusbar, True, True, 0)
         queue_button = QueueButton()
         queue_button.bind_property("active", queue, "visible",
                                    GObject.BindingFlags.BIDIRECTIONAL)
         queue_button.props.active = queue.props.visible
 
         self.pack_start(queue_button, False, True, 0)
+
+    def __update_time(self):
+        self.time_label.set_text(time.strftime("%-I:%M %p", time.localtime()))
+        return True
 
 
 class PlaybackErrorDialog(ErrorMessage):
