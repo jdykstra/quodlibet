@@ -279,23 +279,6 @@ class TopBar(Gtk.Toolbar):
         info_item.add(box)
         qltk.add_css(self, "GtkToolbar {padding: 3px;}")
 
-        # cover image
-        self.image = CoverImage(resize=True)
-        connect_destroy(player, "song-started", self.__new_song)
-
-        # FIXME: makes testing easier
-        if app.cover_manager:
-            connect_destroy(
-                app.cover_manager, "cover-changed",
-                self.__song_art_changed, library)
-
-        box.pack_end(Align(self.image, border=2), False, True, 0)
-
-        # On older Gtk+ (3.4, at least)
-        # setting a margin on CoverImage leads to errors and result in the
-        # QL window not being visible for some reason.
-        assert self.image.props.margin == 0
-
         for child in self.get_children():
             child.show_all()
 
