@@ -279,6 +279,9 @@ class TopBar(Gtk.Toolbar):
         info_item.add(box)
         qltk.add_css(self, "GtkToolbar {padding: 3px;}")
 
+        self._pattern_box = Gtk.VBox()
+        box.pack_start(self._pattern_box, True, True, 0)
+
         for child in self.get_children():
             child.show_all()
 
