@@ -230,30 +230,7 @@ class PlayControls(Gtk.VBox):
         next_.add(SymbolicIconImage("media-skip-forward",
                                     Gtk.IconSize.LARGE_TOOLBAR))
         upper.attach(next_, 2, 3, 0, 1)
-
-        lower = Gtk.Table(n_rows=1, n_columns=3, homogeneous=True)
-        lower.set_row_spacings(3)
-        lower.set_col_spacings(3)
-
-        self.volume = Volume(player)
-        self.volume.set_relief(Gtk.ReliefStyle.NONE)
-        lower.attach(self.volume, 0, 1, 0, 1)
-
-        # XXX: Adwaita defines a different padding for GtkVolumeButton
-        # We force it to 0 here, which works because the other (normal) buttons
-        # in the grid set the width/height
-        qltk.add_css(self.volume, """
-            .button {
-                padding: 0px;
-            }
-        """)
-
-        seekbutton = SeekButton(player, library)
-        seekbutton.set_relief(Gtk.ReliefStyle.NONE)
-        lower.attach(seekbutton, 1, 3, 0, 1)
-
         self.pack_start(upper, False, True, 0)
-        self.pack_start(lower, False, True, 0)
 
         connect_obj(prev, "clicked", self.__previous, player)
         self._toggle_id = play.connect("toggled", self.__playpause, player)
