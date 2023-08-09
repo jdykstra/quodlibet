@@ -670,6 +670,14 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
     def hide_side_book(self):
         self.side_book.hide()
 
+    def hide_browser(self):
+        if self.browser:
+            self.browser.hide()
+
+    def show_browser(self):
+        if self.browser:
+            self.browser.show_all()
+
     def add_sidebar(self, box, name):
         vbox = Gtk.Box(margin=0)
         vbox.pack_start(box, True, True, 0)
@@ -1144,8 +1152,10 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
         image = menu.get_image()
 
         if paused:
+            self.show_browser()
             label, icon = _("_Play"), Icons.MEDIA_PLAYBACK_START
         else:
+            self.hide_browser()
             label, icon = _("P_ause"), Icons.MEDIA_PLAYBACK_PAUSE
 
         menu.set_label(label)
