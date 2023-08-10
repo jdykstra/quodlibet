@@ -277,7 +277,20 @@ class Browser(Gtk.Box, Filter):
         tmpl = numeric_phrase("%d song", "%d songs", count)
         return f"{tmpl} ({time})" if time else tmpl
 
-    replaygain_profiles: list[str] | None = None
+    def _change_opacity(self, amount):
+        new_opacity = self.get_opacity() + amount
+        self.set_opacity(new_opacity)
+        return new_opacity > 0.0 and new_opacity < 1.0
+        
+    def hide(self):
+        self.set_sensitive(False)
+        GLib.timeout_add(50, self._change_opacity, -0.2)
+
+    def show_all(self):
+        self.set_sensitive(True)
+        GLib.timeout_add(50, self._change_opacity, 0.2)
+
+    replaygain_profiles: Optional[List[str]] = None
     """Replay Gain profiles for this browser."""
 
     def __str__(self):
