@@ -281,19 +281,23 @@ class Browser(Gtk.Box, Filter):
     transition_steps = 3.0
     recall_interval = transition_interval/transition_steps
     step_amount = 1/transition_steps
+    _transition_timeout = None
     
     def _change_opacity(self, amount):
         new_opacity = self.get_opacity() + amount
         self.set_opacity(new_opacity)
         return new_opacity > 0.0 and new_opacity < 1.0
     
+    def _start_transition(self, show):
+        if (self._transition_timeout is not None):
+            GLib.source_remove(self._transition_timeout)
+        self._transition_timeout = GLib.timeout_add(self.recall_interval*1000, self._change_opacity, self.step_amount if show else -self.step_amount)
+    
     def hide(self):
-        self.set_sensitive(False)
-        GLib.timeout_add(self.recall_interval*1000, self._change_opacity, -self.step_amount)
+        self._start_transition(False)
 
     def show_all(self):
-        self.set_sensitive(True)
-        GLib.timeout_add(self.recall_interval*1000, self._change_opacity, self.step_amount)
+        self._start_transition(True)
 
     replaygain_profiles: Optional[List[str]] = None
     """Replay Gain profiles for this browser."""
