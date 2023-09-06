@@ -438,7 +438,11 @@ class GStreamerPlayer(BasePlayer, GStreamerPluginHandler):
             resample = self._make("audioresample", None)
             pipeline = [filt, eq, conv, resample] + pipeline
 
-        #  JWD - Don't add a volume element to the pipeline.
+        # playbin2 has started to control the volume through pulseaudio,
+        # which means the volume property can change without us noticing.
+        # Use our own volume element for now until this works with PA.
+        self._int_vol_element = self._make('volume', None)
+        pipeline.insert(0, self._int_vol_element)
 
         # Get all plugin elements and append audio converters.
         # playbin already includes one at the end
@@ -799,10 +803,10 @@ class GStreamerPlayer(BasePlayer, GStreamerPluginHandler):
         v = 1.0 if self._ext_vol_element is not None else self._volume
         v = self.calc_replaygain_volume(v)
         v = min(10.0, max(0.0, v))
-        self._int_vol_element.set_property("volume", v)
+        self._int_vol_element.set_property('volume', v)
 
     def do_set_property(self, property, v):
-        if property.name == "volume":
+        if property.name == 'volume':
             self._volume = v
             if self._ext_vol_element:
                 v = min(10.0, max(0.0, v))
@@ -811,14 +815,14 @@ class GStreamerPlayer(BasePlayer, GStreamerPluginHandler):
                 v = self.calc_replaygain_volume(v)
                 if self.bin:
                     v = min(10.0, max(0.0, v))
-                    self._int_vol_element.set_property("volume", v)
-        elif property.name == "mute":
+                    self._int_vol_element.set_property('volume', v)
+        elif property.name == 'mute':
             self._mute = v
             if self._ext_mute_element is not None:
                 self._ext_mute_element.set_property("mute", v)
             else:
                 if self.bin:
-                    return
+                    self._int_vol_element.set_property("mute", v)
         else:
             raise AttributeError
 
