@@ -286,7 +286,10 @@ class Browser(Gtk.Box, Filter):
     def _change_opacity(self, amount):
         new_opacity = self.get_opacity() + amount
         self.set_opacity(new_opacity)
-        return new_opacity > 0.0 and new_opacity < 1.0
+        more_to_do = new_opacity > 0.0 and new_opacity < 1.0
+        if not more_to_do:
+            self._transition_timeout = None
+        return more_to_do
     
     def _start_transition(self, show):
         if (self._transition_timeout is not None):
