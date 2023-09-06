@@ -10,8 +10,7 @@ ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND noninteractive
 
 # JWD - Workaround to get environment variable to app.
-ENV DISPLAY=192.168.221.9:0
-ENV DISPLAY=10.200.4.237:0
+ENV DISPLAY=172.16.225.39:0
 
 # JWD - Install ALSA for audio.
 RUN apt-get update -y && \
