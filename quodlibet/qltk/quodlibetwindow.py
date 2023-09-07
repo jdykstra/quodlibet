@@ -53,6 +53,7 @@ from quodlibet.qltk.songmodel import PlaylistMux
 from quodlibet.qltk.x import RVPaned, Align, ScrolledWindow, Action
 from quodlibet.qltk.x import ToggleAction, RadioAction, HighlightToggleButton
 from quodlibet.qltk.x import SeparatorMenuItem, MenuItem
+from quodlibet.qltk.x import RadioMenuItem
 from quodlibet.qltk import Icons
 from quodlibet.qltk.about import AboutDialog
 from quodlibet.util import copool, connect_destroy, connect_after_destroy
@@ -452,6 +453,109 @@ def _browser_items(prefix, external=False):
 
 DND_URI_LIST, = range(1)
 
+class VolumeMenu(Gtk.Menu):
+    __modes = (
+        ("auto", _("Auto_matic"), None),
+        ("track", _("_Track Mode"), ["track"]),
+        ("album", _("_Album Mode"), ["album", "track"])
+    )
+
+    def __init__(self, player):
+        super().__init__()
+
+        # ubuntu 12.04..
+        if hasattr(player, "bind_property"):
+            # Translators: player state, no action
+            item = Gtk.CheckMenuItem(label=_("_Mute"), use_underline=True)
+            player.bind_property("mute", item, "active",
+                                 GObject.BindingFlags.BIDIRECTIONAL)
+            self.append(item)
+            item.show()
+
+        item = Gtk.MenuItem(label=_("_Replay Gain Mode"), use_underline=True)
+        self.append(item)
+        item.show()
+
+        # Set replaygain mode as saved in configuration
+        replaygain_mode = config.gettext("player", "replaygain_mode", "auto")
+        self.__set_mode(player, replaygain_mode)
+
+        rg = Gtk.Menu()
+        rg.show()
+        item.set_submenu(rg)
+        item = None
+        for mode, title, profile in self.__modes:
+            item = RadioMenuItem(group=item, label=title,
+                                 use_underline=True)
+            rg.append(item)
+            item.connect("toggled", self.__changed, player, mode)
+            if replaygain_mode == mode:
+                item.set_active(True)
+            item.show()
+
+    def __set_mode(self, player, mode):
+        selected_mode = next((m for m in self.__modes if m[0] == mode), None)
+        if selected_mode is None:
+            print_e("Invalid selected replaygain mode: %r" % mode)
+            selected_mode = self.__modes[0]
+            print_e("Falling back to replaygain mode: %r" % selected_mode[0])
+
+        player.replaygain_profiles[0] = selected_mode[2]
+        player.reset_replaygain()
+
+    def __changed(self, item, player, mode):
+        if item.get_active():
+            config.settext("player", "replaygain_mode", mode)
+            self.__set_mode(player, mode)
+
+    def popup(self, *args):
+        gain = config.getboolean("player", "replaygain")
+        for child in self.get_children():
+            child.set_sensitive(gain)
+        return super().popup(*args)
+
+class Volume(Gtk.Scale):
+    def __init__(self, player):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+
+        self.set_adjustment(Gtk.Adjustment.new(0, 0, 1, 0.05, 0.1, 0))
+        self.set_inverted(True)
+
+        self._id = self.connect('value-changed', self.__volume_changed, player)
+        self._id2 = player.connect('notify::volume', self.__volume_notify)
+        self._id3 = player.connect('notify::mute', self.__mute_notify)
+        player.notify("volume")
+        player.notify("mute")
+
+    def __iadd__(self, v):
+        self.set_value(self.get_value() + v)
+        return self
+
+    def __isub__(self, v):
+        self.set_value(self.get_value() - v)
+        return self
+
+    def __volume_changed(self, scale, player):
+        player.handler_block(self._id2)
+        player.volume = scale.get_value()
+        player.handler_unblock(self._id2)
+
+    def __volume_notify(self, player, prop):
+        self.handler_block(self._id)
+        self.set_value(player.volume)
+        self.handler_unblock(self._id)
+
+    def __mute_notify(self, player, prop):
+        self._update_mute(player)
+
+    def _update_mute(self, player):
+        #if player.mute:
+            # remove all icons except the mute one to show a muted state
+            # that is not affected by the volume slider
+        #    self.props.icons = [self._orig_icon_list[0]]
+        #else:
+        #    self.props.icons = self._orig_icon_list
+        pass
 
 class SongListPaned(RVPaned):
 
@@ -580,14 +684,29 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
 
         top_bar = TopBar(self, player, library)
         main_box.pack_start(top_bar, False, True, 0)
-        self.top_bar = top_bar
+        self.top_bar = top_bar  
+
+        browser_and_songlist = Gtk.HBox()
 
         self.__browserbox = Align(top=3, bottom=3)
         self.__paned = paned = ConfigRHPaned("memory", "sidebar_pos", 0.25)
         paned.pack1(self.__browserbox, resize=True)
         # We'll pack2 when necessary (when the first sidebar plugin is set up)
 
-        main_box.pack_start(paned, True, True, 0)
+        browser_and_songlist.pack_start(paned, True, True, 0)
+        self.volume = Volume(player)
+
+        # XXX: Adwaita defines a different padding for GtkVolumeButton
+        # We force it to 0 here, which works because the other (normal) buttons
+        # in the grid set the width/height
+        qltk.add_css(self.volume, """
+            .button {
+                padding: 0px;
+            }
+        """)        
+        browser_and_songlist.pack_start(self.volume, True, True, 0)
+
+        main_box.pack_start(browser_and_songlist, True, True, 0)
 
         play_order = PlayOrderWidget(self.songlist.model, player)
         statusbox = StatusBarBox(play_order, self.qexpander)
