@@ -63,6 +63,8 @@ from quodlibet.util.library import background_filter, scan_library
 from quodlibet.util.path import uri_is_valid
 from quodlibet.qltk.window import PersistentWindowMixin, Window, on_first_map
 from quodlibet.qltk.songlistcolumns import CurrentColumn
+from . import add_css, gtk_version
+
 
 
 class PlayerOptions(GObject.Object):
@@ -514,12 +516,20 @@ class VolumeMenu(Gtk.Menu):
             child.set_sensitive(gain)
         return super().popup(*args)
 
-class VolumeSlider(Gtk.Scale):
+class VolumeControl(Gtk.Scale):
     def __init__(self, player):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         self.set_adjustment(Gtk.Adjustment.new(0, 0, 1, 0.05, 0.1, 0))
         self.set_inverted(True)
+        self.set_digits(2)
+        if gtk_version >= (3, 0):
+            add_css(self, """
+                scale slider {
+                    min-height: 35px;
+                    min-width: 35px;
+                }
+            """)
 
         # only restore the volume in case it is managed locally, otherwise
         # this could affect the system volume
@@ -539,16 +549,19 @@ class VolumeSlider(Gtk.Scale):
     def __isub__(self, v):
         self.set_value(self.get_value() - v)
         return self
+    
+    # ?? This should be a configuration option, maybe with a UI.
+    base_volume_level = 0.25
 
     def __volume_changed(self, scale, player):
         player.handler_block(self._id2)
-        player.volume = scale.get_value()
+        player.volume = self.base_volume_level + (1.0 - self.base_volume_level) * scale.get_value()
         player.handler_unblock(self._id2)
+        config.set("memory", "volume", str(player.volume))
 
     def __volume_notify(self, player, prop):
         self.handler_block(self._id)
-        print("__volume_notify player value: %s" % player.volume)
-        self.set_value(player.volume)
+        self.set_value((player.volume - self.base_volume_level) / (1.0 - self.base_volume_level))
         self.handler_unblock(self._id)
 
     def __mute_notify(self, player, prop):
@@ -700,7 +713,7 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
         # We'll pack2 when necessary (when the first sidebar plugin is set up)
 
         browser_and_songlist.pack_start(paned, True, True, 0)
-        volume_slider = VolumeSlider(player)
+        volume_slider = VolumeControl(player)
 
         # XXX: Adwaita defines a different padding for GtkVolumeButton
         # We force it to 0 here, which works because the other (normal) buttons
