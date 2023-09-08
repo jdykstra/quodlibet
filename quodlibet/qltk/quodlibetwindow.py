@@ -514,12 +514,17 @@ class VolumeMenu(Gtk.Menu):
             child.set_sensitive(gain)
         return super().popup(*args)
 
-class Volume(Gtk.Scale):
+class VolumeSlider(Gtk.Scale):
     def __init__(self, player):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         self.set_adjustment(Gtk.Adjustment.new(0, 0, 1, 0.05, 0.1, 0))
         self.set_inverted(True)
+
+        # only restore the volume in case it is managed locally, otherwise
+        # this could affect the system volume
+        if not player.has_external_volume:
+            player.volume = config.getfloat("memory", "volume")
 
         self._id = self.connect('value-changed', self.__volume_changed, player)
         self._id2 = player.connect('notify::volume', self.__volume_notify)
@@ -542,6 +547,7 @@ class Volume(Gtk.Scale):
 
     def __volume_notify(self, player, prop):
         self.handler_block(self._id)
+        print("__volume_notify player value: %s" % player.volume)
         self.set_value(player.volume)
         self.handler_unblock(self._id)
 
@@ -694,17 +700,17 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
         # We'll pack2 when necessary (when the first sidebar plugin is set up)
 
         browser_and_songlist.pack_start(paned, True, True, 0)
-        self.volume = Volume(player)
+        volume_slider = VolumeSlider(player)
 
         # XXX: Adwaita defines a different padding for GtkVolumeButton
         # We force it to 0 here, which works because the other (normal) buttons
         # in the grid set the width/height
-        qltk.add_css(self.volume, """
+        qltk.add_css(volume_slider, """
             .button {
                 padding: 0px;
             }
         """)        
-        browser_and_songlist.pack_start(self.volume, True, True, 0)
+        browser_and_songlist.pack_start(volume_slider, True, True, 0)
 
         main_box.pack_start(browser_and_songlist, True, True, 0)
 
