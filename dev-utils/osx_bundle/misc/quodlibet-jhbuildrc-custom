@@ -5,6 +5,7 @@ import os
 
 checkoutroot = os.path.expanduser("~/jhbuild_checkoutroot")
 prefix = os.path.expanduser("~/jhbuild_prefix")
+use_local_modulesets = True
 modulesets_dir = os.environ["QL_OSXBUNDLE_MODULESETS_DIR"]
 moduleset = ["quodlibet"]
 modules = []
