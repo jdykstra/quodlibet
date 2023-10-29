@@ -99,6 +99,23 @@
     </dependencies>
   </metamodule>
 
+  <!--  Apple switched to a buggy implementation of libiconv in MacOS 14.0. 
+      https://lists.gnu.org/archive/html/bug-gettext/2023-10/msg00022.html.  
+      Use the GNU implementation instead.                                       -->
+  <!--  JHBuild seems unable to recognize dependencies on this library.  
+      To work around this, do:
+          source env.sh
+          jhbuild buildone libiconv
+      before doing:
+          ./build.sh                                                            -->
+  <autotools id="libiconv" autogen-sh="configure">
+    <branch repo="ftp.gnu.org"
+            version="1.16"
+            module="libiconv/libiconv-${version}.tar.gz"
+            hash="sha256:e6a1b1b589654277ee790cce3734f07876ac4ccfaecbee8afa0b649cf529cc04">
+    </branch>
+ </autotools>
+
   <autotools id="autoconf-archive">
     <branch repo="autoconf-archive" module="autoconf-archive-${version}.tar.xz" version="2018.03.13"
             hash="sha256:6175f90d9fa64c4d939bdbb3e8511ae0ee2134863a2c7bf8d9733819efa6e159"/>
@@ -119,10 +136,13 @@
   </cmake>
 
   <autotools id="pkg-config" autogen-sh="configure"
-             autogenargs="--with-internal-glib">
+             autogenargs="--with-internal-glib --with-libiconv=gnu">
     <branch repo="pkgconfig"
             module="pkg-config-${version}.tar.gz" version="0.29.2"
             hash="sha256:6fc69c01688c9458a57eb9a1664c9aba372ccda420a02bf4429fe610e7e7d591"/>
+    <dependencies>
+      <dep package="iconv"/>
+    </dependencies>
   </autotools>
 
   <autotools id="m4" autogen-sh="configure" bootstrap="true">
@@ -224,10 +244,13 @@
   <autotools id="librsvg" autogenargs="--disable-Bsymbolic">
     <branch module="librsvg/2.56/librsvg-${version}.tar.xz" version="2.56.0"
         hash="sha256:194b5097d9cd107495f49c291cf0da65ec2b4bb55e5628369751a3f44ba222b3"/>
-    <dependencies>>
+    <dependencies>
       <dep package="freetype"/>
       <dep package="gdk-pixbuf2"/>
       <dep package="pango"/>
+      <dep package="libiconv"/>
+      <!-- docutils needed to provide rst2man during build.  -->
+     <dep package="python-docutils"/>
     </dependencies>
   </autotools>
 
@@ -392,11 +415,16 @@
     </dependencies>
   </autotools>
 
+  <!--  with-libiconv-prefix=/usr/local/opt/libiconv  -->
   <autotools id="gettext" autogen-sh="configure"
-             autogenargs="--without-emacs --disable-java --disable-native-java --disable-libasprintf --disable-csharp --with-included-libxml --with-included-libcroco --with-included-glib --with-included-libunistring --with-libiconv-prefix=/usr/local/opt/libiconv">
+             autogenargs="--without-emacs --disable-java --disable-native-java --disable-libasprintf --disable-csharp --with-included-libxml --with-included-libcroco --with-included-glib --with-included-libunistring --with-libiconv_prefix=$JHBUILD_PREFIX">
     <branch repo="ftp.gnu.org"
             module="gettext/gettext-${version}.tar.xz" version="0.22.3"
-            hash="sha256:b838228b3f8823a6c1eddf07297197c4db13f7e1b173b9ef93f3f945a63080b6"/>
+            hash="sha256:b838228b3f8823a6c1eddf07297197c4db13f7e1b173b9ef93f3f945a63080b6">
+    </branch>
+    <dependencies>
+      <dep package="libiconv"/>
+    </dependencies>
   </autotools>
 
   <autotools id="ffmpeg"
@@ -435,7 +463,7 @@
             hash="sha256:8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840"/>
   </autotools>
 
-  <meson id="glib2">
+  <meson id="glib2"  mesonargs="-Dtests=false">
     <branch module="glib/2.74/glib-${version}.tar.xz" version="2.74.7"
             hash="sha256:196ab86c27127a61b7a70c3ba6af7b97bdc01c07cd3b21abd5e778b955eccb1b">
     </branch>
@@ -446,6 +474,7 @@
         <dep package="libffi"/>
         <dep package="pcre2"/>
         <dep package="zlib"/>
+        <dep package="libiconv"/>
     </dependencies>
   </meson>
 
@@ -594,6 +623,17 @@
     </dependencies>
   </distutils>
 
+  <distutils id="python-docutils" python3="1">
+    <branch repo="pypi.org"
+            module="d/docutils/docutils-${version}.tar.gz"
+            version="0.20.1"
+            checkoutdir="python-docutils-${version}"
+            hash="sha256:f08a4e276c3a1583a86dce3e34aba3fe04d02bba2dd51ed16106244e8a923e3b"/>
+    <dependencies>
+      <dep package="python"/>
+    </dependencies>
+  </distutils>
+
   <distutils id="dmgbuild" python3="1">
     <branch repo="pypi.org" checkoutdir="dmgbuild-${version}" module="d/dmgbuild/dmgbuild-${version}.tar.gz"
             version="1.5.2"
@@ -683,12 +723,13 @@
     </dependencies>
   </distutils>
 
+  <!-- Need at least pyobjc 9.1.1 to avoid compile errors. -->
   <distutils id="python-pyobjc-core" python3="1">
     <branch repo="pypi.org"
             checkoutdir="python-pyobjc-core-${version}"
             module="p/pyobjc-core/pyobjc-core-${version}.tar.gz"
-            version="8.5.1"
-            hash="sha256:f8592a12de076c27006700c4a46164478564fa33d7da41e7cbdd0a3bf9ddbccf"/>
+            version="9.1.1"
+            hash="sha256:4b6cb9053b5fcd3c0e76b8c8105a8110786b20f3403c5643a688c5ec51c55c6b"/>
     <dependencies>
       <dep package="python-setuptools"/>
     </dependencies>
@@ -698,8 +739,8 @@
     <branch repo="pypi.org"
             checkoutdir="python-pyobjc-framework-Cocoa-${version}"
             module="p/pyobjc-framework-Cocoa/pyobjc-framework-Cocoa-${version}.tar.gz"
-            version="8.5.1"
-            hash="sha256:9a3de5cdb4644e85daf53f2ed912ef6c16ea5804a9e65552eafe62c2e139eb8c"/>
+            version="9.1.1"
+            hash="sha256:345c32b6d1f3db45f635e400f2d0d6c0f0f7349d45ec823f76fc1df43d13caeb"/>
     <dependencies>
       <dep package="python-setuptools"/>
       <dep package="python-pyobjc-core"/>
@@ -710,8 +751,8 @@
     <branch repo="pypi.org"
             checkoutdir="python-pyobjc-framework-Quartz-${version}"
             module="p/pyobjc-framework-Quartz/pyobjc-framework-Quartz-${version}.tar.gz"
-            version="8.5.1"
-            hash="sha256:37ba625b6c240d4f5aea02f1672b16e53e39de07dbaf33751a61b5a0be7dc9fa"/>
+            version="9.1.1"
+            hash="sha256:8d03bc52bd6d90f00f274fd709b82e53dc5dfca19f3fc744997634e03faaa159"/>
     <dependencies>
       <dep package="python-setuptools"/>
       <dep package="python-pyobjc-core"/>
@@ -723,8 +764,8 @@
     <branch repo="pypi.org"
             checkoutdir="python-pyobjc-${version}"
             module="p/pyobjc/pyobjc-${version}.tar.gz"
-            version="8.5.1"
-            hash="sha256:d424702249f00dc55a2ea73d7d71fd7fb6fa37c6442f75896975f49c3976c9d0"/>
+            version="9.1.1"
+            hash="sha256:79071b1a71238708a34e87e50d5693c8a31206c567a125b0db7f500f841c64c9"/>
     <dependencies>
     <dep package="python-setuptools"/>
     <dep package="python-pyobjc-core"/>
@@ -771,6 +812,18 @@
     </branch>
   </autotools>
 
+<!--  Don't build gst-plugins-bad for now.  It requires openexr, which requires CMake,
+      which opens up a new can of worms.
+      
+      According to the openexr website, the current source distribution is at
+      https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v3.2.1.tar.gz   
+  <autotools id="openexr" autogen-sh="configure">
+    <branch module="openexr/openexr-${version}.tar.gz"
+            repo="github-tar" version="3.2.1"
+            hash="sha256:8888888">
+    </branch>
+  </autotools>    
+
   <meson id="gst-plugins-bad" mesonargs="-Dapplemedia=disabled">
     <branch repo="gstreamer" version="1.20.6"
             module="gst-plugins-bad/gst-plugins-bad-${version}.tar.xz"
@@ -783,8 +836,11 @@
       <dep package="chromaprint"/>
       <dep package="soundtouch"/>
       <dep package="libgme"/>
+      <dep package="openexr"/>
     </dependencies>
   </meson>
+  
+  -->
 
   <!-- CMAKE_INSTALL_NAME_DIR is needed to get an absolute path for the install name (otool -D) -->
   <cmake id="chromaprint" use-ninja="no" cmakeargs="-DCMAKE_BUILD_TYPE=Release -DBUILD_FRAMEWORK=OFF -DCMAKE_INSTALL_NAME_DIR='${prefix}/lib'">
@@ -843,6 +899,7 @@
             repo="xiph"
             version="1.3.7"
             hash="sha256:b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b"/>
+            <patch file="dont-build-test_sharedbook.patch" strip="1"/>
   </autotools>
 
   <autotools id="speex" autogen-sh="configure">
@@ -950,7 +1007,7 @@
   </autotools>
 
   <autotools id="libxml2-python" autogen-sh="configure"
-             autogenargs='--with-python PYTHON=$JHBUILD_PREFIX/bin/python3'>
+             autogenargs='--with-python PYTHON=$JHBUILD_PREFIX/bin/python3 --with-iconv=$JHBUILD_PREFIX/lib'>
     <branch version="2.10.4" module="libxml2/2.10/libxml2-${version}.tar.xz"
         checkoutdir="libxml2-python-${version}"
         hash="sha256:ed0c91c5845008f1936739e4eee2035531c1c94742c6541f44ee66d885948d45"/>
