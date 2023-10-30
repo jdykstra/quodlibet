@@ -20,7 +20,7 @@
 # improving this setup, or have any patches that you would like to get
 # included.
 
-###########  JWD - https://gitlab.gnome.org/GNOME/gtk-osx/-/blob/master/jhbuildrc-gtk-osx?ref_type=heads  cea03513 
+# From: https://gitlab.gnome.org/GNOME/gtk-osx/-/blob/master/jhbuildrc-gtk-osx?ref_type=heads  cea03513 
 import sys
 import errno
 import re

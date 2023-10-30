@@ -9,12 +9,13 @@ source env.sh
 rm -Rf "$QL_OSXBUNDLE_JHBUILD_DEST"
 rm -Rf "$QL_OSXBUNDLE_BUNDLER_DEST"
 rm -Rf "$HOME/.local"
+rm -Rf "$HOME/.cache"
 rm -f "$HOME/.jhbuildrc"
 rm -f "$HOME/.jhbuildrc-custom"
 
 rustup install 1.69.0
 
-JHBUILD_REVISION="30ef98f"
+JHBUILD_REVISION="3.38.0"
 
 mkdir -p "$HOME"
 git clone https://gitlab.gnome.org/GNOME/jhbuild.git "$QL_OSXBUNDLE_JHBUILD_DEST"
