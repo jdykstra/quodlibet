@@ -891,7 +891,7 @@
 
   <meson id="gstreamer">
     <branch repo="gstreamer" module="gstreamer/gstreamer-${version}.tar.xz"
-            version="1.20 .6"
+            version="1.20.6"
             hash="sha256:0545b030960680f71a95f9d39c95daae54b4d317d335e8f239d81138773c9b90">
     </branch>
     <dependencies>
