@@ -1,0 +1,44 @@
+diff -Nur tdb-1.4.9/configure tdb-1.4.9-mod/configure
+--- tdb-1.4.9/configure	2022-04-12 05:29:16
++++ tdb-1.4.9-mod/configure	2023-11-04 18:59:44
+@@ -1,11 +1,16 @@
+ #!/bin/sh
+
+-PREVPATH=$(dirname $0)
++#
++#  As distributed, libtdb doesn't build successfully out-of-tree.
++#  JHBuild claims to support its supports-non-srcdir-builds attributes, but
++#  doesn't as of 3.38.0.  As a workaround, do all building in the source
++#  directory, and put a do-nothing Makefile in the build directory.
++#
++SRCPATH=$(dirname $0)
++BLDPATH=`pwd`
+
+-if [ -f $PREVPATH/../../buildtools/bin/waf ]; then
+-	WAF=../../buildtools/bin/waf
+-elif [ -f $PREVPATH/buildtools/bin/waf ]; then
+-	WAF=./buildtools/bin/waf
++if [ -f $SRCPATH/buildtools/bin/waf ]; then
++	WAF=$SRCPATH/buildtools/bin/waf
+ else
+ 	echo "replace: Unable to find waf"
+ 	exit 1
+@@ -23,6 +28,9 @@
+ PYTHONHASHSEED=1
+ export PYTHONHASHSEED
+
+-cd . || exit 1
++cd $SRCPATH
+ $PYTHON $WAF configure "$@" || exit 1
+-cd $PREVPATH
++$PYTHON $WAF build || exit 1
++$PYTHON $WAF install || exit 1
++
++cp dummy-makefile $BLDPATH/Makefile
+diff -Nur tdb-1.4.9/dummy-makefile tdb-1.4.9-mod/dummy-makefile
+--- tdb-1.4.9/dummy-makefile	1969-12-31 18:00:00
++++ tdb-1.4.9-mod/dummy-makefile	2023-11-04 18:57:22
+@@ -0,0 +1,3 @@
++all :
++install :
++
