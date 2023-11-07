@@ -821,13 +821,13 @@
        NOTE:  supports-non-srcdir-builds="no" doesn't work as of JHBuild 3.38.0.         -->
   <autotools id="libtdb" autogen-sh="configure">
     <branch module="tdb/tdb-${version}.tar.gz"
- 	      repo="samba" version="1.4.9"  
+ 	      repo="samba" version="1.4.9"  skip-install="yes"
 	      hash="sha256:0ac226073e3a2db8648da7af744cb95f50766a52feeb001d558b2b321b74a765">
       <patch file="patches/libtdb-source-dir-build.patch" strip="1"/>
     </branch>
   </autotools>
   
-  <meson id="libpulse">
+  <meson id="libpulse" mesonargs="-Dtests=false -Ddoxygen=false">
     <branch module="pulseaudio/pulseaudio/-/archive/v${version}/pulseaudio-v${version}.tar.gz"
         repo="gitlab" version="16.1"
         hash="sha256:bd9df649ba2062b3bedea168e75745b755b789223aeb23ca47686f103170a481">
