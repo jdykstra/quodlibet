@@ -9,9 +9,13 @@ source env.sh
 rm -Rf "$QL_OSXBUNDLE_JHBUILD_DEST"
 rm -Rf "$QL_OSXBUNDLE_BUNDLER_DEST"
 rm -Rf "$HOME/.local"
-rm -Rf "$HOME/.cache"
 rm -f "$HOME/.jhbuildrc"
 rm -f "$HOME/.jhbuildrc-custom"
+
+# Delete all build products, so that we'll build everything from scratch.
+rm -Rf "$HOME/jhbuild_checkoutroot"
+rm -Rf "$HOME/.cache"
+rm -Rf "$HOME/jhbuild_prefix"
 
 rustup install 1.69.0
 
