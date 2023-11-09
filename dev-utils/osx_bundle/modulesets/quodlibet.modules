@@ -841,9 +841,9 @@
   </meson>
 
   <autotools id="libidn2" autogen-sh="configure">
-    <branch module="libidn/libidn2/-/archive/v${version}/libidn2-v${version}.tar.gz"
-            repo="gitlab" version="2.3.4"
-            hash="sha256:8cbfa15927d29bcf953db35c0cfca7424344ff43ebe4083daf161577fb839cc1">
+    <branch module="libidn/libidn2-${version}.tar.gz"
+            repo="ftp.gnu.org" version="2.3.4"
+            hash="sha256:93caba72b4e051d1f8d4f5a076ab63c99b77faee019b72b9783b267986dbb45f">
     </branch>
   </autotools>
 
