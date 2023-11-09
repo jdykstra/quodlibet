@@ -832,9 +832,12 @@
         repo="gitlab" version="16.1"
         hash="sha256:bd9df649ba2062b3bedea168e75745b755b789223aeb23ca47686f103170a481">
       <patch file="patches/pulseaudio.provide-tarball-version.patch" strip="1"/>
+      <patch file="patches/pulseaudio.no-SCM_CREDENTIALS.patch" strip="1"/>
+      <patch file="patches/pulseaudio.not-ELF.patch" strip="1"/>
     </branch>
     <dependencies>
-      <dep  package="libtdb"/>
+      <dep package="libtdb"/>
+      <dep package="liblzo"/>
     </dependencies>
   </meson>
 

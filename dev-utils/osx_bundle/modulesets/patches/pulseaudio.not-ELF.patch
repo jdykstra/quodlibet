@@ -1,0 +1,17 @@
+diff -Nur pulseaudio-v16.1/meson.build pulseaudio-v16.1-mod/meson.build
+--- pulseaudio-v16.1/meson.build	2022-06-21 05:54:48
++++ pulseaudio-v16.1-mod/meson.build	2023-11-09 01:57:16
+@@ -424,11 +424,8 @@
+ # so we request the nodelete flag to be enabled.
+ # On other systems, we don't really know how to do that, but it's welcome if somebody can tell.
+ # Windows doesn't support this flag.
+-if host_machine.system() != 'windows'
+-  nodelete_link_args = ['-Wl,-z,nodelete']
+-else
+-  nodelete_link_args = []
+-endif
++# MacOS isn't Windows, but it doesn't use ELF
++nodelete_link_args = []
+
+ # Code coverage
+
