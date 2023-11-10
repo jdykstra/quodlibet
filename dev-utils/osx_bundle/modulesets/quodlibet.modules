@@ -69,6 +69,8 @@
               href="http://pkgconfig.freedesktop.org/releases/"/>
   <repository type="tarball" name="ffmpeg"
               href="https://ffmpeg.org/"/>
+  <repository type="tarball" name="oberhumer.com"
+              href="https://www.oberhumer.com/opensource/"/>
 
   <metamodule id="meta-bootstrap">
     <dependencies>
@@ -223,6 +225,13 @@
     </branch>
   </meson>
 
+  <autotools id="lzo">
+    <branch module="lzo/download/lzo-${version}.tar.gz" repo="oberhumer.com"
+            version="2.10"
+            hash="sha1:4924676a9bae5db58ef129dc1cebce3baa3c4b5d">
+    </branch>
+  </autotools>
+
   <meson id="cairo">
     <branch module="cairo-${version}.tar.xz"  version="1.17.8"
             repo="cairographics-snapshots"
@@ -235,6 +244,7 @@
       <dep package="fontconfig"/>
       <dep package="gettext"/>
       <dep package="glib2"/>
+      <dep package="lzo"/>
     </dependencies>
   </meson>
 
