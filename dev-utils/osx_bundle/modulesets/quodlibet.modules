@@ -814,7 +814,7 @@
       <dep package="libjpeg-turbo"/>
       <dep package="gdk-pixbuf2"/>
       <dep package="mpg123"/>
-      <dep package="libpulse"/>
+      <dep package="pulseaudio"/>
       <dep package="libidn2"/>
     </dependencies>
   </meson>
@@ -826,18 +826,7 @@
     </branch>
   </autotools>
 
-  <!-- libtdb uses fake configure and Makefile scripts to run WAF, a build tool from the Samba
-       project.  It doesn't fit very well into the JHBuild universe. We build it in-tree.    
-       NOTE:  supports-non-srcdir-builds="no" doesn't work as of JHBuild 3.38.0.         -->
-  <autotools id="libtdb" autogen-sh="configure">
-    <branch module="tdb/tdb-${version}.tar.gz"
- 	      repo="samba" version="1.4.9"  skip-install="yes"
-	      hash="sha256:0ac226073e3a2db8648da7af744cb95f50766a52feeb001d558b2b321b74a765">
-      <patch file="patches/libtdb-source-dir-build.patch" strip="1"/>
-    </branch>
-  </autotools>
-  
-  <meson id="libpulse" mesonargs="-Dtests=false -Ddoxygen=false">
+  <meson id="pulseaudio" mesonargs="-Dtests=false -Ddaemon=false -Ddoxygen=false -Ddatabase=simple">
     <branch module="pulseaudio/pulseaudio/-/archive/v${version}/pulseaudio-v${version}.tar.gz"
         repo="gitlab" version="16.1"
         hash="sha256:bd9df649ba2062b3bedea168e75745b755b789223aeb23ca47686f103170a481">
@@ -845,7 +834,6 @@
       <patch file="patches/pulseaudio.47a69187.patch" strip="1"/>
     </branch>
     <dependencies>
-      <dep package="libtdb"/>
       <dep package="liblzo"/>
     </dependencies>
   </meson>
