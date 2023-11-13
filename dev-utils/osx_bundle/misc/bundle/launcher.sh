@@ -53,7 +53,10 @@ export SSL_CERT_FILE="$GTLS_SYSTEM_CA_FILE"
 export QUODLIBET_NO_HINTS=yes
 
 # select target based on our basename
-APP=$(basename "$0")
+# Issue #1:  MacOS 14.0 is passing our path as $0, not the pathname
+# of the symbolic link the user opened.  Hardwire quodlibet as a
+# workaround.
+APP=quodlibet
 if [ "$APP" = "run" ]; then
     "$PYTHON" "$@"
 elif  [ "$APP" = "gst-plugin-scanner" ]; then
