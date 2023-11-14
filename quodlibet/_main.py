@@ -206,6 +206,9 @@ def get_build_description():
 
         if build.BUILD_INFO:
             notes.append(build.BUILD_INFO)
+    
+    # For alpha releases only.
+    notes.append(const.JWD_RELEASE_VERSION)
 
     version_string = u".".join(map(str, version))
     note = u" (%s)" % u", ".join(notes) if notes else u""
