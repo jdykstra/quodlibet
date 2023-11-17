@@ -17,6 +17,8 @@
   <repository type="tarball" name="cairographics-snapshots"
               href="https://cairographics.org/snapshots/"/>
   <repository type='tarball' name='ftp.gnu.org' href="ftp://ftp.gnu.org/gnu/"/>
+  <repository type="tarball" name="gnupg"
+              href="https://gnupg.org/ftp/"/>
   <repository type="tarball" name="chromaprint"
               href="https://github.com/acoustid/chromaprint/releases/download/"/>
   <repository type="tarball" name="libgme"
@@ -844,19 +846,28 @@
             hash="sha256:93caba72b4e051d1f8d4f5a076ab63c99b77faee019b72b9783b267986dbb45f">
     </branch>
   </autotools>
-
-<!--  Don't build gst-plugins-bad for now.  It requires openexr, which requires CMake,
-      which opens up a new can of worms.
-      
-      According to the openexr website, the current source distribution is at
-      https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v3.2.1.tar.gz   
-  <autotools id="openexr" autogen-sh="configure">
-    <branch module="openexr/openexr-${version}.tar.gz"
-            repo="github-tar" version="3.2.1"
-            hash="sha256:8888888">
+  
+  <cmake id="openexr" cmakeargs="">
+    <branch module="AcademySoftwareFoundation/openexr/archive/refs/tags/v${version}.tar.gz"
+            repo="github-tar" version="3.2.1" checkoutdir="openexr-v${version}"
+            hash="sha256:61e175aa2203399fb3c8c2288752fbea3c2637680d50b6e306ea5f8ffdd46a9b">
     </branch>
-  </autotools>    
+  </cmake>    
 
+  <autotools id="gcrypt" autogen-sh="configure">
+    <branch module="gcrypt/libgcrypt/libgcrypt-${version}.tar.bz2"
+            repo="gnupg" version="1.10.3"
+            hash="sha256:8b0870897ac5ac67ded568dcfadf45969cfa8a6beb0fd60af2a9eadc2a3272aa">
+    </branch>
+  </autotools>
+
+  <autotools id="gpg-error" autogen-sh="configure">
+    <branch module="gcrypt/libgpg-error/libgpg-error-${version}.tar.bz2"
+            repo="gnupg" version="1.47"
+            hash="sha256:9e3c670966b96ecc746c28c2c419541e3bcb787d1a73930f5e5f5e1bcbbb9bdb">
+    </branch>
+  </autotools>
+ 
   <meson id="gst-plugins-bad" mesonargs="-Dapplemedia=disabled">
     <branch repo="gstreamer" version="1.20.6"
             module="gst-plugins-bad/gst-plugins-bad-${version}.tar.xz"
@@ -870,10 +881,10 @@
       <dep package="soundtouch"/>
       <dep package="libgme"/>
       <dep package="openexr"/>
+      <dep package="gcrypt"/>
+      <dep package="gpg-error"/>
     </dependencies>
   </meson>
-  
-  -->
 
   <!-- CMAKE_INSTALL_NAME_DIR is needed to get an absolute path for the install name (otool -D) -->
   <cmake id="chromaprint" use-ninja="no" cmakeargs="-DCMAKE_BUILD_TYPE=Release -DBUILD_FRAMEWORK=OFF -DCMAKE_INSTALL_NAME_DIR='${prefix}/lib'">
