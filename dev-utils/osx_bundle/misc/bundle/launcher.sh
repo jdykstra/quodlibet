@@ -8,7 +8,7 @@ bundle_bin="$bundle_res"/bin
 bundle_data="$bundle_res"/share
 bundle_etc="$bundle_res"/etc
 
-export DYLD_LIBRARY_PATH="$bundle_lib"
+export DYLD_LIBRARY_PATH="$bundle_lib":"$bundle_lib/pulseaudio"
 
 export XDG_CONFIG_DIRS="$bundle_etc"/xdg
 export XDG_DATA_DIRS="$bundle_data"
@@ -58,7 +58,6 @@ export QUODLIBET_NO_HINTS=yes
 # $0, not the path of the symbolic link.  As a workaround, hardwire "quodlibet"
 # as the app name.  
 APP=$(basename "$0")
-echo "APP=$APP"
 if [ "$APP" = "_launcher" ]; then
     APP="quodlibet"
 fi
