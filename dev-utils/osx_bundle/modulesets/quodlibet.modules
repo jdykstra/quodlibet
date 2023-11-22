@@ -256,7 +256,7 @@
             hash="sha256:1f4696ce70b4ee5f85f1e1623dc1229b210029fa4b7aee573df3e2ba7b036937"/>
   </autotools>
 
-  <autotools id="librsvg" autogenargs="--disable-Bsymbolic">
+  <autotools id="librsvg" autogenargs="--disable-Bsymbolic --disable-gtk-doc">
     <branch module="librsvg/2.56/librsvg-${version}.tar.xz" version="2.56.0"
         hash="sha256:194b5097d9cd107495f49c291cf0da65ec2b4bb55e5628369751a3f44ba222b3"/>
     <dependencies>
@@ -264,8 +264,6 @@
       <dep package="gdk-pixbuf2"/>
       <dep package="pango"/>
       <dep package="libiconv"/>
-      <!-- docutils is needed to provide rst2man during build.  -->
-     <dep package="python-docutils"/>
     </dependencies>
   </autotools>
 
@@ -632,17 +630,6 @@
             version="64.0.3"
             checkoutdir="python-setuptools-${version}"
             hash="sha256:3bcaf6e27ad3b0f643ba0a48c5ab9eca930c3eb51df0e068f4826ab880c394ea"/>
-    <dependencies>
-      <dep package="python"/>
-    </dependencies>
-  </distutils>
-
-  <distutils id="python-docutils" python3="1">
-    <branch repo="pypi.org"
-            module="d/docutils/docutils-${version}.tar.gz"
-            version="0.20.1"
-            checkoutdir="python-docutils-${version}"
-            hash="sha256:f08a4e276c3a1583a86dce3e34aba3fe04d02bba2dd51ed16106244e8a923e3b"/>
     <dependencies>
       <dep package="python"/>
     </dependencies>
