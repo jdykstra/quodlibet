@@ -302,7 +302,7 @@ class Browser(Gtk.Box, Filter):
     def show_all(self):
         self._start_transition(True)
 
-    replaygain_profiles: Optional[List[str]] = None
+    replaygain_profiles: list[str] | None = None
     """Replay Gain profiles for this browser."""
 
     def __str__(self):
