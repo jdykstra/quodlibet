@@ -803,6 +803,7 @@ class GStreamerPlayer(BasePlayer, GStreamerPluginHandler):
         v = 1.0 if self._ext_vol_element is not None else self._volume
         v = self.calc_replaygain_volume(v)
         v = min(10.0, max(0.0, v))
+        print_d(f"GStreamerPlayer._reset_replaygain(): Setting volume to {v}")
         self._int_vol_element.set_property('volume', v)
 
     def do_set_property(self, property, v):

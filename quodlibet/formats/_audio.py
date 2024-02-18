@@ -1091,6 +1091,7 @@ class AudioFile(dict, ImageContainer, HasKey):
             try:
                 db = float(self["replaygain_%s_gain" % profile].split()[0])
                 peak = float(self.get("replaygain_%s_peak" % profile, 1))
+                print_d(f"AudioFile.replay_gain(): profile {profile} {db} {peak}")
             except (KeyError, ValueError, IndexError):
                 continue
             else:
@@ -1102,6 +1103,7 @@ class AudioFile(dict, ImageContainer, HasKey):
                 else:
                     if scale * peak > 1:
                         scale = 1.0 / peak  # don't clip
+                print_d(f"AudioFile.replay_gain(): pre_amp_gain scale {scale}")
                 return min(15, scale)
         else:
             try:
@@ -1110,6 +1112,7 @@ class AudioFile(dict, ImageContainer, HasKey):
                 scale = 1.0
             else:
                 scale = min(scale, 1.0)
+            print_d(f"AudioFile.replay_gain(): fallback_gain + pre_amp_gain scale {scale}")
             return min(15, scale)
 
     def write(self):
