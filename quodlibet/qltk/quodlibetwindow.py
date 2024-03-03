@@ -554,7 +554,8 @@ class VolumeControl(Gtk.Scale):
     base_volume_level = 0.25
 
     def __volume_changed(self, scale, player):
-        player.handler_block(self._id2)
+        player.handler_block(self._id2) 
+        print("VolumeControl.__volume_changed():  Volume slider = %f FS" % (self.base_volume_level + (1.0 - self.base_volume_level) * scale.get_value()))
         player.volume = self.base_volume_level + (1.0 - self.base_volume_level) * scale.get_value()
         player.handler_unblock(self._id2)
         config.set("memory", "volume", str(player.volume))
