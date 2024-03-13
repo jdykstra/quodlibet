@@ -1089,8 +1089,12 @@ class AudioFile(dict, ImageContainer, HasKey):
             if profile == "none":
                 return 1.0
             try:
-                db = float(self["replaygain_%s_gain" % profile].split()[0])
-                peak = float(self.get("replaygain_%s_peak" % profile, 1))
+                try:
+                    db = float(self["REPLAYGAIN_%s_GAIN" % profile.upper()].split()[0])
+                    peak = float(self.get("REPLAYGAIN_%s_PEAK" % profile.upper(), 1))
+                except (KeyError):
+                    db = float(self["replaygain_%s_gain" % profile].split()[0])
+                    peak = float(self.get("replaygain_%s_peak" % profile, 1))
                 print(f"AudioFile.replay_gain(): Tag = {profile}, rg adjustment = {db} dB, peak = {peak} FS")
             except (KeyError, ValueError, IndexError):
                 continue
