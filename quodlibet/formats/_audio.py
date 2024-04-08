@@ -1088,7 +1088,7 @@ class AudioFile(dict, ImageContainer, HasKey):
         applied before checking for clipping. fallback_gain will be
         used when the song does not have replaygain information.
         """
-        for profile in profiles:
+        for profile in ["track"]:
             if profile == "none":
                 return 1.0
             try:
