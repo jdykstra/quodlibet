@@ -1103,15 +1103,8 @@ class AudioFile(dict, ImageContainer, HasKey):
                 continue
             else:
                 db += pre_amp_gain
-                try:
-                    scale = 10. ** (db / 20)
-                    print(f"AudioFile.replay_gain(): Scale computed from rg adjustment and preamp gain = {scale} FS")
-                except OverflowError:
-                    scale = 1.0 / peak
-                else:
-                    if scale * peak > 1:
-                        scale = 1.0 / peak  # don't clip
-                        print(f"AudioFile.replay_gain(): Scale adjusted to avoid clipping scale = {scale} FS") 
+                scale = 1.0 / peak
+                print(f"AudioFile.replay_gain(): Scale from  peak = {-scale2dBFS(scale)} dBFS")
                 return min(15, scale)
         else:
             try:
