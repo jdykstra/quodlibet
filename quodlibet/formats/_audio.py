@@ -13,6 +13,7 @@
 
 import json
 import os
+import math
 import re
 import shutil
 import time
@@ -102,6 +103,8 @@ def decode_value(tag, value):
 
 K = TypeVar("K")
 
+def scale2dBFS(scale):
+    return -20 * math.log10(scale)
 
 class HasKey(Generic[K]):
     """Many things can be keyed"""
@@ -1095,7 +1098,7 @@ class AudioFile(dict, ImageContainer, HasKey):
                 except (KeyError):
                     db = float(self["replaygain_%s_gain" % profile].split()[0])
                     peak = float(self.get("replaygain_%s_peak" % profile, 1))
-                print(f"AudioFile.replay_gain(): Tag = {profile}, rg adjustment = {db} dB, peak = {peak} FS")
+                print(f"AudioFile.replay_gain(): Tag = {profile.upper()}, rg adjustment = {db} dB, peak = {-scale2dBFS(peak)} dBFS")
             except (KeyError, ValueError, IndexError):
                 continue
             else:
@@ -1108,7 +1111,7 @@ class AudioFile(dict, ImageContainer, HasKey):
                 else:
                     if scale * peak > 1:
                         scale = 1.0 / peak  # don't clip
-                        print(f"AudioFile.replay_gain(): Scale adjusted to avoid clipping scale = {scale} FS")
+                        print(f"AudioFile.replay_gain(): Scale adjusted to avoid clipping scale = {scale} FS") 
                 return min(15, scale)
         else:
             try:
@@ -1117,7 +1120,7 @@ class AudioFile(dict, ImageContainer, HasKey):
                 scale = 1.0
             else:
                 scale = min(scale, 1.0)
-            print(f"AudioFile.replay_gain(): No tag found, scale = {scale} FS")
+            print(f"AudioFile.replay_gain(): No tag found, scale = {-scale2dBFS(scale)} dBFS")
             return min(15, scale)
 
     def write(self):

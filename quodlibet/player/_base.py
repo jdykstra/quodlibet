@@ -123,6 +123,7 @@ class BasePlayer(GObject.GObject, Equalizer):
         """
 
         if self.song and config.getboolean("player", "replaygain"):
+            print(f"BasePlayer.calc_replaygain_volume: replaygain_profiles are {self.replaygain_profiles}")
             profiles = list(filter(None, self.replaygain_profiles))[0]
             fb_gain = config.getfloat("player", "fallback_gain")
             pa_gain = config.getfloat("player", "pre_amp_gain")
