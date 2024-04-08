@@ -1079,7 +1079,7 @@ class AudioFile(dict, ImageContainer, HasKey):
             except ValueError:
                 pass
 
-    def replay_gain(self, profiles, pre_amp_gain=0, fallback_gain=0):
+    def replay_gain(self, profiles, pre_amp_gain=0, fallback_gain=0.5):
         """Return the computed Replay Gain scale factor.
 
         profiles is a list of Replay Gain profile names ('album',

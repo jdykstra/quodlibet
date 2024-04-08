@@ -30,7 +30,7 @@ INITIAL: dict[str, dict[str, str]] = {
     "player": {
         "time_remaining": "false",
         "replaygain": "on",
-        "fallback_gain": "0.0",
+        "fallback_gain": "0.5",
         "pre_amp_gain": "0.0",
         "backend": "gstbe",
         "gst_pipeline": "",
