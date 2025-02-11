@@ -277,7 +277,7 @@ class Browser(Gtk.Box, Filter):
         tmpl = numeric_phrase("%d song", "%d songs", count)
         return f"{tmpl} ({time})" if time else tmpl
 
-    transition_interval = 0.5
+    transition_interval = 0.25
     transition_steps = 3.0
     recall_interval = transition_interval/transition_steps
     step_amount = 1/transition_steps
