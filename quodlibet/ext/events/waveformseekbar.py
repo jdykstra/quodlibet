@@ -16,6 +16,9 @@ from math import ceil, floor
 
 from gi.repository import Gtk, Gdk, Gst
 import cairo
+from threading import get_ident
+from ctypes import Structure, c_int, CDLL, byref
+from os import getpid
 
 from quodlibet import _, app
 from quodlibet import print_w
@@ -28,7 +31,7 @@ from quodlibet.qltk import Icons
 from quodlibet.qltk.seekbutton import TimeLabel
 from quodlibet.qltk.tracker import TimeTracker
 from quodlibet.qltk import get_fg_highlight_color
-from quodlibet.util import connect_destroy, print_d
+from quodlibet.util import connect_destroy, print_d, is_linux
 from quodlibet.util.path import uri2gsturi
 
 
@@ -41,6 +44,7 @@ class WaveformSeekBar(Gtk.Box):
         self._player = player
         self._rms_vals = []
         self._hovering = False
+        self._first_time = True
 
         self._elapsed_label = TimeLabel()
         self._remaining_label = TimeLabel()
@@ -115,6 +119,35 @@ class WaveformSeekBar(Gtk.Box):
         self._pipeline = pipeline
         self._new_rms_vals = []
 
+    SCHED_IDLE = 5  # Linux: IDLE priority
+    PRI_LOW = 0  # Linux: LOW priority
+
+    def _get_scheduling_priority(self):
+        class SchedParam(Structure):
+            _fields_ = [("sched_priority", c_int)]
+
+        try:
+            libc = CDLL("libc.so.6")
+            policy = libc.sched_getscheduler(getpid())
+            param = SchedParam()
+            libc.sched_getparam(getpid(), byref(param))
+            priority = param.sched_priority
+            print_d(f"[Thread-{hex(get_ident())}] Get scheduling policy {policy} {priority}.")
+            return policy, priority
+        except Exception as e:
+            print_w(f"Failed to get thread scheduling policy and priority: {e}")
+            return None, None
+    
+    def _set_scheduling_priority(self, policy, priority):
+
+        try:
+            libc = CDLL("libc.so.6")
+            param = c_int(priority)
+            libc.sched_setscheduler(getpid(), policy, byref(param))
+            print_d(f"[Thread-{hex(get_ident())}] Set scheduling policy {policy} {priority}.")
+        except Exception as e:
+            print_w(f"Failed to set thread priority: {e}")
+
     def _on_bus_message(self, bus, message, points):
         force_stop = False
         if message.type == Gst.MessageType.ERROR:
@@ -124,6 +157,15 @@ class WaveformSeekBar(Gtk.Box):
         elif message.type == Gst.MessageType.ELEMENT:
             structure = message.get_structure()
             if structure.get_name() == "level":
+                
+                # Avoid preempting the core that is playing audio by temporarily changing this thread's
+                # scheduling policy.  Currently implemented only on Linux.
+                if self._first_time and is_linux():
+                    self._first_time = False
+                    self.original_sched_policy, self.original_sched_priority = self._get_scheduling_priority()
+                    if self.original_sched_policy is not None:
+                        self._set_scheduling_priority(self.SCHED_IDLE, self.PRI_LOW)
+                    
                 rms_db = structure.get_value("rms")
                 if rms_db:
                     # Calculate average of all channels (usually 2)
@@ -137,10 +179,14 @@ class WaveformSeekBar(Gtk.Box):
                         # short interval set.
                         force_stop = True
             else:
-                print_w(f"Got unexpected message of type {message.type}")
+                print_w(f"Got unexpected message of type {message.type} for {structure.get_name()}")
 
         if message.type == Gst.MessageType.EOS or force_stop:
             self._clean_pipeline()
+
+            self._first_time = True
+            if self.original_sched_policy is not None:
+                self._set_scheduling_priority(self.original_sched_policy, self.original_sched_priority)
 
             # Update the waveform with the new data
             self._rms_vals = self._new_rms_vals
