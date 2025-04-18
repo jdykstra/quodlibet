@@ -14,8 +14,8 @@ def main():
         print("Connected to CamillaDSP")
 
         while True:
-            # Generate a random volume between 0.5 and 1
-            random_volume = random.uniform(0.5, 1.0)
+            # Generate a random volume between -50 and 0 dB
+            random_volume = random.uniform(-50, 0)
             print(f"Setting volume to: {random_volume:.2f} dB")
 
             # Set the main volume
