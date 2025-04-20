@@ -30,7 +30,7 @@ from quodlibet.qltk.paned import ConfigMultiRHPaned
 from .prefs import PreferencesButton, ColumnMode
 from .util import get_headers
 from .pane import Pane
-import dspconfig
+import quodlibet.player.dspconfig
 
 
 class PanedBrowser(Browser, util.InstanceTracker):
