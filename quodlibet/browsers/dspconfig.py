@@ -89,9 +89,7 @@ class DspConfigwindow(qltk.UniqueWindow):
 
         self.set_title("DSP")
 
-        vbox = Gtk.VBox(spacing=12)
-
-        column_modes = ConfigSelector(browser)
+        vbox = ConfigSelector(browser)
 
         apply_ = qltk.x.Button("_Apply")
 
