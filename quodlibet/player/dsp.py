@@ -4,7 +4,8 @@ import os
 from camilladsp import CamillaClient
 
 class DspController(CamillaClient):
-    def __init__(self):
+    def __init__(self, host: str, port: int):
+
         super().__init__(host, port)
     
     def get_configs(self):
