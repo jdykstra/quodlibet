@@ -17,24 +17,32 @@ class ConfigSelector(Gtk.VBox):
 
         # Create a label
         label = Gtk.Label(label="DSP Configuration File:")
-        self.pack_start(label, False, False, 0)
+        label_box = Gtk.HBox()
+        label_box.pack_start(label, False, False, 0)
+        self.pack_start(label_box, False, False, 0)
 
         # Create a container for radio buttons
         self.radio_buttons = []
+        radio_buttons_box = Gtk.HBox()
         self.create_radio_buttons()
+        for button in self.radio_buttons:
+            radio_buttons_box.pack_start(button, False, False, 0)
+        self.pack_start(radio_buttons_box, False, False, 0)
 
         # Create an "Apply" button
         apply_button = Gtk.Button(label="Apply")
         apply_button.connect("clicked", self.on_apply_clicked)
-        self.pack_start(apply_button, False, False, 0)
+        button_box = Gtk.HBox()
+        button_box.pack_start(apply_button, False, False, 0)
+        self.pack_start(button_box, False, False, 0)
 
     def create_radio_buttons(self):
         """
         Create radio buttons for each configuration file.
         """
         try:
-            dsp.dsp_controller.connect()
-            self.config_dir, config_files = dsp.dsp_controller.get_configs()
+            dsp_controller.connect()
+            self.config_dir, config_files = dsp_controller.get_configs()
         except Exception as e:
             error_label = Gtk.Label(label=f"Error: {e}")
             self.pack_start(error_label, False, False, 0)
@@ -44,7 +52,6 @@ class ConfigSelector(Gtk.VBox):
         for config_file in config_files:
             button = Gtk.RadioButton.new_with_label_from_widget(previous_button, config_file)
             button.connect("toggled", self.on_radio_button_toggled, config_file)
-            self.pack_start(button, False, False, 0)
             self.radio_buttons.append(button)
             previous_button = button
 
@@ -61,8 +68,8 @@ class ConfigSelector(Gtk.VBox):
         """
         if self.selected_config:
             try:
-                dsp.dsp_controller.set_file_path(os.path.join(self.config_dir, self.selected_config))
-                dsp.dsp_controller.reload()
+                dsp_controller.set_file_path(os.path.join(self.config_dir, self.selected_config))
+                dsp_controller.reload()
                 print(f"Configuration '{self.selected_config}' applied successfully.")
             except Exception as e:
                 print(f"Failed to apply configuration: {e}")
