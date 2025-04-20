@@ -7,7 +7,7 @@ from gi.repository import Gtk
 from quodlibet import qltk
 from quodlibet.qltk.menubutton import MenuButto
 
-from .dsp import DspController, dsp_controller
+from ..player.dsp import DspController, dsp_controller
 
 class ConfigSelector(Gtk.VBox):
     def __init__(self, dsp_controller):
