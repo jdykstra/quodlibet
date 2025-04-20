@@ -109,7 +109,7 @@ class DspButton(Gtk.HBox):
 
         self._menu = menu = Gtk.Menu()
 
-        pref_item = qltk.x.MenuItem("_Dsp Menu", Icons.PREFERENCES_SYSTEM)
+        pref_item = qltk.x.MenuItem("_Dsp Menu", qltk.Icons.PREFERENCES_SYSTEM)
 
         def config_cb(menu_item):
             window = DspConfigwindow(browser)
