@@ -23,7 +23,7 @@ class ConfigSelector(Gtk.VBox):
 
         # Create a container for radio buttons
         self.radio_buttons = []
-        radio_buttons_box = Gtk.HBox()
+        radio_buttons_box = Gtk.VBox()
         self.create_radio_buttons()
         for button in self.radio_buttons:
             radio_buttons_box.pack_start(button, False, False, 0)
