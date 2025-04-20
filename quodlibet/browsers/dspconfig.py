@@ -5,7 +5,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 from quodlibet import qltk
-from quodlibet.qltk.menubutton import MenuButto
+from quodlibet.qltk.menubutton import MenuButton
 
 from ..player.dsp import DspController, dsp_controller
 
