@@ -80,15 +80,15 @@ class DspConfigwindow(qltk.UniqueWindow):
         self.set_default_size(350, 300)
         self.set_border_width(12)
 
-        self.set_title(_("DSP"))
+        self.set_title("DSP")
 
         vbox = Gtk.VBox(spacing=12)
 
         column_modes = ConfigSelector(browser)
 
-        apply_ = qltk.x.Button(_("_Apply"))
+        apply_ = qltk.x.Button("_Apply")
 
-        cancel = qltk.x.Button(_("_Cancel"))
+        cancel = qltk.x.Button("_Cancel")
         cancel.connect("clicked", lambda x: self.destroy())
 
         box = Gtk.HButtonBox()
