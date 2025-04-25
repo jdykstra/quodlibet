@@ -526,8 +526,8 @@ class VolumeControl(Gtk.Scale):
         if gtk_version >= (3, 0):
             add_css(self, """
                 scale slider {
-                    min-height: 35px;
-                    min-width: 35px;
+                    min-height: 45px;
+                    min-width: 45px;
                 }
             """)
 
