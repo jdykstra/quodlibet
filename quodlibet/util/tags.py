@@ -46,7 +46,13 @@ class TagName:
         self.internal = "i" in options
         self.numeric = "n" in options
         self.machine = "m" in options
-        self.has_sort = "s" in options
+
+        # JWD: Disable use of Xsort tags.  This works around a poorly-understood
+        # bug that causes inconsistent sorting of tags in the paned brower.
+        # It also results in a simplistic sort order that is easier for
+        # me to use.
+        #self.has_sort = "s" in options
+        self.has_sort = False
         self.has_roles = "r" in options
         self.hidden = "h" in options
         self.role = role
