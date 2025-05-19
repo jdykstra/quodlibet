@@ -38,7 +38,7 @@ paho-mqtt = { version = "^1.6.1", optional = true }
 # Use with poetry install -E plugins
 plugins = ["musicbrainzngs", "dbus-python", "paho-mqtt", "soco", "pypresence"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = '^7.2.2'
 polib = '^1.2.0'
 sphinx = '^7.2.6'
