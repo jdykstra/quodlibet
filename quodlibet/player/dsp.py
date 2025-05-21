@@ -22,7 +22,8 @@ class DspController(CamillaClient):
 
         return config_dir, yml_files
 
-# ?? Put this in the QL configuration file some day.
+#  Create the singleton controller.
+# # ?? Put address and port in the QL configuration file some day.
 DSP_HOST = "127.0.0.1"
 DSP_PORT = 1234
    

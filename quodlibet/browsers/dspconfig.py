@@ -10,9 +10,9 @@ from quodlibet.qltk.menubutton import MenuButton
 from ..player.dsp import DspController, dsp_controller
 
 class ConfigSelector(Gtk.VBox):
-    def __init__(self, dsp_controller):
+    def __init__(self, browser):
         super().__init__(spacing=10)
-        self.dsp_controller = dsp_controller
+        self.browser = browser
         self.selected_config = None
 
         # Create a label
@@ -68,8 +68,8 @@ class ConfigSelector(Gtk.VBox):
         """
         if self.selected_config:
             try:
-                dsp_controller.set_file_path(os.path.join(self.config_dir, self.selected_config))
-                dsp_controller.reload()
+                dsp_controller.config.set_file_path(os.path.join(self.config_dir, self.selected_config))
+                dsp_controller.general.reload()
                 print(f"Configuration '{self.selected_config}' applied successfully.")
             except Exception as e:
                 print(f"Failed to apply configuration: {e}")
