@@ -105,6 +105,7 @@ class Icons(str):
     SYSTEM_LOCK_SCREEN = "system-lock-screen"
     SYSTEM_RUN = "system-run"  # "_Execute"
     SYSTEM_SEARCH = "system-search"
+    SPEAKER = "audio-speakers-rtl-symbolic"
     TEXT_HTML = "text-html"
     TOOLS_CHECK_SPELLING = "tools-check-spelling"  # "_Spell Check"
     USER_BOOKMARKS = "user-bookmarks" # Looks like a rating
