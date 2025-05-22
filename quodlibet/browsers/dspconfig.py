@@ -67,14 +67,18 @@ class ConfigSelector(Gtk.VBox):
         try:
             dsp_controller.connect()
             self.config_dir, config_files = dsp_controller.get_configs()
+            current_path = dsp_controller.config.file_path()
+            current_file = os.path.basename(current_path) if current_path else None
         except Exception as e:
             error_label = Gtk.Label(label=f"Error: {e}")
             self.pack_start(error_label, False, False, 0)
             return
-
+        finally:
+            dsp_controller.disconnect()
+            
         self.rect_buttons = []
         self.button_to_config = {}
-        config_files = list(config_files)  # Ensure config_files is a list, not a set
+        config_files = list(config_files)  
         for config_file in config_files:
             button = Gtk.Button(label=config_file)
             button.set_relief(Gtk.ReliefStyle.NONE)
@@ -83,19 +87,31 @@ class ConfigSelector(Gtk.VBox):
             self.rect_buttons.append(button)
             self.button_to_config[button] = config_file
 
-        # Set the first as selected by default if any
-        if self.rect_buttons:
-            self.select_rect_button(self.rect_buttons[0], config_files[0])
+        # Select the button matching the current config file, if any
+        #  ??  Change the color, but don't command the DSP.
+        #  ??  There's got to be a a way to do with with button_to_config.
+        selected_button = None
+        for button, config_file in self.button_to_config.items():
+            if config_file == current_file:
+                selected_button = button
+                break
 
+        if selected_button:
+            self.select_rect_button(selected_button, current_file)
+        elif self.rect_buttons:
+            self.select_rect_button(self.rect_buttons[0], config_files[0])
 
     def select_rect_button(self, selected_button, new_config):
         try:
+            dsp_controller.connect()
             dsp_controller.config.set_file_path(os.path.join(self.config_dir, new_config))
             dsp_controller.general.reload()
             print(f"Configuration '{new_config}' applied successfully.")
         except Exception as e:
             print(f"Failed to apply configuration: {e}")
             return
+        finally:
+            dsp_controller.disconnect()
 
         for button in self.rect_buttons:
             style_context = button.get_style_context()
