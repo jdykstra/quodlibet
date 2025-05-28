@@ -6,6 +6,7 @@ from gi.repository import Gtk, Gdk
 
 from quodlibet import qltk
 from quodlibet.qltk.menubutton import MenuButton
+from quodlibet.qltk.touch import ensure_touch_css_loaded, set_touch_tile_color
 
 from ..player.dsp import DspController, dsp_controller
 
@@ -13,8 +14,9 @@ class ConfigSelector(Gtk.VBox):
     def __init__(self, browser):
         super().__init__(spacing=10)
         self.browser = browser
+        
         self.selected_config = None
-        self._ensure_css_loaded()
+        ensure_touch_css_loaded()
 
         # Create a label
         label = Gtk.Label(label="Active Configuration")
@@ -32,33 +34,6 @@ class ConfigSelector(Gtk.VBox):
         for button in self.rect_buttons:
             self.config_buttons_box.pack_start(button, False, False, 0)
         self.pack_start(self.config_buttons_box, False, False, 0)
-
-    def _ensure_css_loaded(self):
-        # Only load CSS once per application
-        if getattr(ConfigSelector, '_css_loaded', False):
-            return
-        css = b'''
-        .touch_tile_selected {
-            background: #4caf50;
-            color: #fff;
-            min-height: 50px;
-            margin-bottom: 10px;
-        }
-        .touch_tile_unselected {
-            background: #90caf9;
-            color: #fff;
-            min-height: 50px;
-            margin-bottom: 10px;
-        }
-        '''
-        style_provider = Gtk.CssProvider()
-        style_provider.load_from_data(css)
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(),
-            style_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        )
-        ConfigSelector._css_loaded = True
 
     def create_config_chooser(self):
         """
@@ -108,19 +83,13 @@ class ConfigSelector(Gtk.VBox):
             dsp_controller.general.reload()
             print(f"Configuration '{new_config}' applied successfully.")
         except Exception as e:
-            print(f"Failed to apply configuration: {e}")
+            print(f"Failed to apply configuration {new_config}: {e}")
             return
         finally:
             dsp_controller.disconnect()
 
         for button in self.rect_buttons:
-            style_context = button.get_style_context()
-            if button == selected_button:
-                style_context.remove_class("touch_tile_unselected")
-                style_context.add_class("touch_tile_selected")
-            else:
-                style_context.remove_class("touch_tile_selected")
-                style_context.add_class("touch_tile_unselected")
+            set_touch_tile_color(button, "green" if button == selected_button else "blue")
         self.selected_config = new_config
 
     def on_rect_button_clicked(self, button, new_config):
