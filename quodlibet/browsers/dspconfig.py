@@ -6,9 +6,10 @@ from gi.repository import Gtk, Gdk
 
 from quodlibet import qltk
 from quodlibet.qltk.menubutton import MenuButton
-from quodlibet.qltk.touch import ensure_touch_css_loaded, set_touch_tile_color
 
 from ..player.dsp import DspController, dsp_controller
+import quodlibet.qltk.touch as tt
+
 
 class ConfigSelector(Gtk.VBox):
     def __init__(self, browser):
@@ -55,7 +56,7 @@ class ConfigSelector(Gtk.VBox):
         self.button_to_config = {}
         config_files = list(config_files)  
         for config_file in config_files:
-            button = Gtk.Button(label=config_file)
+            button = tt.TouchTile(label=config_file)
             button.set_relief(Gtk.ReliefStyle.NONE)
             button.set_size_request(-1, 25)
             button.connect("clicked", self.on_rect_button_clicked, config_file)
@@ -89,7 +90,8 @@ class ConfigSelector(Gtk.VBox):
             dsp_controller.disconnect()
 
         for button in self.rect_buttons:
-            set_touch_tile_color(button, "green" if button == selected_button else "blue")
+            newColor = tt.GREEN if button == selected_button else tt.BLUE
+            button.set_color(button, newColor)
         self.selected_config = new_config
 
     def on_rect_button_clicked(self, button, new_config):
