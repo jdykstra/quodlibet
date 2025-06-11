@@ -51,36 +51,35 @@ def ensure_touch_css_loaded():
     )
     ensure_touch_css_loaded._css_loaded = True
 
-    class TouchTile(Gtk.Button):
-        GREEN = "green"
-        BLUE = "blue"
-        TOUCH_TILE_RED = "red"
-        TOUCH_TILE_YELLOW = "yellow"
-        TOUCH_TILE_ORANGE = "orange"
-        _ALLOWED_COLORS = {
-            GREEN,
-            BLUE,
-            TOUCH_TILE_RED,
-            TOUCH_TILE_YELLOW,
-            TOUCH_TILE_ORANGE,
-        }
+class TouchTile(Gtk.Button):
+    GREEN = "green"
+    BLUE = "blue"
+    RED = "red"
+    YELLOW = "yellow"
+    ORANGE = "orange"
+    _ALLOWED_COLORS = {
+        GREEN,
+        BLUE,
+        RED,
+        YELLOW,
+        ORANGE,
+    }
 
-        def __init__(self, label=None, color=GREEN, **kwargs):
-            ensure_touch_css_loaded()
-            super().__init__(label=label, **kwargs)
-            self.set_color(color)
+    def __init__(self, label=None, color=GREEN, **kwargs):
+        ensure_touch_css_loaded()
+        super().__init__(label=label, **kwargs)
+        self.set_color(color)
 
-        def set_color(self, color):
-            """
-            Set the appearance of the button to a primary color.
-            Args:
-                color (str): One of 'green', 'blue', 'red', 'yellow', 'orange'.
-            """
-            if color not in self._ALLOWED_COLORS:
-                raise ValueError(f"Unsupported color: {color}")
-            style_context = self.get_style_context()
-            for c in self._ALLOWED_COLORS:
-                style_context.remove_class(f"touch_tile_{c}")
-            style_context.add_class(f"touch_tile_{color}")
+    def set_color(self, color):
+        """
+        Set the appearance of the button to a primary color.
+        Args:
+            color (str): One of 'green', 'blue', 'red', 'yellow', 'orange'.
+        """
+        if color not in self._ALLOWED_COLORS:
+            raise ValueError(f"Unsupported color: {color}")
+        style_context = self.get_style_context()
+        for c in self._ALLOWED_COLORS:
+            style_context.remove_class(f"touch_tile_{c}")
+        style_context.add_class(f"touch_tile_{color}")
 
- 

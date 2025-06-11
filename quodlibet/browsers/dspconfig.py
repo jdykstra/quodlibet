@@ -17,7 +17,7 @@ class ConfigSelector(Gtk.VBox):
         self.browser = browser
         
         self.selected_config = None
-        ensure_touch_css_loaded()
+        tt.ensure_touch_css_loaded()
 
         # Create a label
         label = Gtk.Label(label="Active Configuration")
@@ -90,8 +90,8 @@ class ConfigSelector(Gtk.VBox):
             dsp_controller.disconnect()
 
         for button in self.rect_buttons:
-            newColor = tt.GREEN if button == selected_button else tt.BLUE
-            button.set_color(button, newColor)
+            newColor = tt.TouchTile.GREEN if button == selected_button else tt.TouchTile.BLUE
+            button.set_color(newColor)
         self.selected_config = new_config
 
     def on_rect_button_clicked(self, button, new_config):
