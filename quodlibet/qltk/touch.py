@@ -57,7 +57,7 @@ class TouchTile(Gtk.Button):
     RED = "red"
     YELLOW = "yellow"
     ORANGE = "orange"
-    _ALLOWED_COLORS = {
+    _VALID_COLORS = {
         GREEN,
         BLUE,
         RED,
@@ -68,6 +68,11 @@ class TouchTile(Gtk.Button):
     def __init__(self, label=None, color=GREEN, **kwargs):
         ensure_touch_css_loaded()
         super().__init__(label=label, **kwargs)
+        
+        #  ??  Shouldn't this be in the CSS?
+        self.set_relief(Gtk.ReliefStyle.NONE)
+        self.set_size_request(-1, 25)
+
         self.set_color(color)
 
     def set_color(self, color):
@@ -76,10 +81,10 @@ class TouchTile(Gtk.Button):
         Args:
             color (str): One of 'green', 'blue', 'red', 'yellow', 'orange'.
         """
-        if color not in self._ALLOWED_COLORS:
+        if color not in self._VALID_COLORS:
             raise ValueError(f"Unsupported color: {color}")
         style_context = self.get_style_context()
-        for c in self._ALLOWED_COLORS:
+        for c in self._VALID_COLORS:
             style_context.remove_class(f"touch_tile_{c}")
         style_context.add_class(f"touch_tile_{color}")
 
