@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
+# touch.py - Graphics tools for touch UI enhancements in Quod Libet.
+# Copyright (C) 2025 John Dykstra.
+# This file is part of Quod Libet. See LICENSE for details.
+
 import gi
 from gi.repository import Gtk, Gdk
 
 def ensure_touch_css_loaded():
-    """Ensure the touch tile CSS is loaded once per application."""
+    """Ensure the touch CSS is loaded once per application."""
     if getattr(ensure_touch_css_loaded, '_css_loaded', False):
         return
     css = b'''
@@ -46,18 +51,36 @@ def ensure_touch_css_loaded():
     )
     ensure_touch_css_loaded._css_loaded = True
 
-def set_touch_tile_color(button, color):
-    """
-    Set the appearance of a button to a primary color.
-    Args:
-        button (Gtk.Button): The button to update.
-        color (str): One of 'green', 'blue', 'red', 'yellow', 'orange'.
-    """
-    allowed = {"green", "blue", "red", "yellow", "orange"}
-    if color not in allowed:
-        raise ValueError(f"Unsupported color: {color}")
-    style_context = button.get_style_context()
-    # Remove all possible tile color classes
-    for c in allowed:
-        style_context.remove_class(f"touch_tile_{c}")
-    style_context.add_class(f"touch_tile_{color}")
+    class TouchTile(Gtk.Button):
+        GREEN = "green"
+        BLUE = "blue"
+        TOUCH_TILE_RED = "red"
+        TOUCH_TILE_YELLOW = "yellow"
+        TOUCH_TILE_ORANGE = "orange"
+        _ALLOWED_COLORS = {
+            GREEN,
+            BLUE,
+            TOUCH_TILE_RED,
+            TOUCH_TILE_YELLOW,
+            TOUCH_TILE_ORANGE,
+        }
+
+        def __init__(self, label=None, color=GREEN, **kwargs):
+            ensure_touch_css_loaded()
+            super().__init__(label=label, **kwargs)
+            self.set_color(color)
+
+        def set_color(self, color):
+            """
+            Set the appearance of the button to a primary color.
+            Args:
+                color (str): One of 'green', 'blue', 'red', 'yellow', 'orange'.
+            """
+            if color not in self._ALLOWED_COLORS:
+                raise ValueError(f"Unsupported color: {color}")
+            style_context = self.get_style_context()
+            for c in self._ALLOWED_COLORS:
+                style_context.remove_class(f"touch_tile_{c}")
+            style_context.add_class(f"touch_tile_{color}")
+
+ 
