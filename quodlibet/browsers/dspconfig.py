@@ -3,6 +3,7 @@ import os
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
+from gi.repository import GObject
 
 from quodlibet import qltk
 from quodlibet.qltk.menubutton import MenuButton
@@ -86,6 +87,59 @@ class ConfigChooser(Gtk.VBox):
         self._selected_button = button
 
 
+class DspStatusPane(Gtk.VBox):
+    """
+    Pane to display the current DSP status as a TouchTile.
+    """
+    STATE_COLORS = {
+        "running": tt.TouchTile.GREEN,
+        "starting": tt.TouchTile.YELLOW,
+        "stalled": tt.TouchTile.RED,
+        "paused": tt.TouchTile.BLUE,
+        "inactive": tt.TouchTile.ORANGE,
+    }
+
+    def __init__(self):
+        super().__init__(spacing=10)
+        tt.ensure_touch_css_loaded()
+        # Add a label above the TouchTile
+        label = Gtk.Label(label="Status")
+        label.set_justify(Gtk.Justification.CENTER)
+        label.set_alignment(0.5, 0.5)
+        self.pack_start(label, False, False, 0)
+        self.status_tile = tt.TouchTile(label="...", color=tt.TouchTile.BLUE)
+        self.pack_start(self.status_tile, False, False, 0)
+        self._refresh_id = None
+        self.update_status()
+
+    def update_status(self):
+        try:
+            dsp_controller.connect()
+            state = dsp_controller.general.state()
+            state_str = getattr(state, 'name', str(state))
+            color = self.STATE_COLORS.get(state_str.lower(), tt.TouchTile.BLUE)
+            self.status_tile.set_label(state_str)
+            self.status_tile.set_color(color)
+        except Exception as e:
+            self.status_tile.set_label("Error")
+            self.status_tile.set_color(tt.TouchTile.RED)
+        finally:
+            dsp_controller.disconnect()
+
+    def start_auto_refresh(self):
+        if self._refresh_id is None:
+            self._refresh_id = GObject.timeout_add(1000, self._on_timeout)
+
+    def stop_auto_refresh(self):
+        if self._refresh_id is not None:
+            GObject.source_remove(self._refresh_id)
+            self._refresh_id = None
+
+    def _on_timeout(self):
+        self.update_status()
+        return True  # Continue calling
+
+
 class DspControlWindow(qltk.UniqueWindow):
     def __init__(self, browser):
         if self.is_not_unique():
@@ -95,9 +149,20 @@ class DspControlWindow(qltk.UniqueWindow):
         self.set_default_size(350, 200)
         self.set_border_width(12)
         self.set_title("Camilla DSP")
+        
+        # Create a horizontal box to hold the status pane and config chooser
+        hbox = Gtk.HBox(spacing=12)
+        self.status_pane = DspStatusPane()
+        hbox.pack_start(self.status_pane, False, False, 0)
         configChooser = ConfigChooser(browser)
-        self.add(configChooser)
+        hbox.pack_start(configChooser, True, True, 0)
+        self.add(hbox)
         self.get_child().show_all()
+        self.status_pane.start_auto_refresh()
+        self.connect("destroy", self._on_destroy)
+
+    def _on_destroy(self, *args):
+        self.status_pane.stop_auto_refresh()
 
 
 class DspWindowOpener(Gtk.HBox):
