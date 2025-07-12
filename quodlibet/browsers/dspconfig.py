@@ -111,18 +111,30 @@ class DspStatusPane(Gtk.VBox):
         self.pack_start(self.status_tile, False, False, 0)
         self._refresh_id = None
         self.update_status()
+        self.start_auto_refresh()  # Start auto-refresh immediately
 
     def update_status(self):
         try:
             dsp_controller.connect()
             state = dsp_controller.general.state()
-            state_str = getattr(state, 'name', str(state))
-            color = self.STATE_COLORS.get(state_str.lower(), tt.TouchTile.BLUE)
-            self.status_tile.set_label(state_str)
+            state_str = getattr(state, 'name', str(state)).lower()  # Ensure lowercase
+            color = self.STATE_COLORS.get(state_str, tt.TouchTile.BLUE)
+            self.status_tile.set_label(state_str.title())  # Display with proper case
+            
+            # Force the color change and redraw
+            old_color = getattr(self.status_tile, '_current_color', None)
             self.status_tile.set_color(color)
+            self.status_tile._current_color = color
+            
+            # Force a redraw
+            self.status_tile.queue_draw()
+            
+            print(f"Status updated: {state_str} -> {color} (was {old_color})")  # Debug output
         except Exception as e:
             self.status_tile.set_label("Error")
             self.status_tile.set_color(tt.TouchTile.RED)
+            self.status_tile.queue_draw()
+            print(f"Status update error: {e}")  # Debug output
         finally:
             dsp_controller.disconnect()
 
@@ -158,7 +170,7 @@ class DspControlWindow(qltk.UniqueWindow):
         hbox.pack_start(configChooser, True, True, 0)
         self.add(hbox)
         self.get_child().show_all()
-        self.status_pane.start_auto_refresh()
+        # Remove duplicate start_auto_refresh call since it's now in __init__
         self.connect("destroy", self._on_destroy)
 
     def _on_destroy(self, *args):
