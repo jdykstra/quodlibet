@@ -13,31 +13,26 @@ def ensure_touch_css_loaded():
     css = b'''
     .touch_tile_green {
         background: #4caf50;
-        color: #fff;
         min-height: 50px;
         margin-bottom: 10px;
     }
     .touch_tile_blue {
         background: #90caf9;
-        color: #fff;
         min-height: 50px;
         margin-bottom: 10px;
     }
     .touch_tile_red {
         background: #e53935;
-        color: #fff;
         min-height: 50px;
         margin-bottom: 10px;
     }
     .touch_tile_yellow {
         background: #ffd600;
-        color: #000;
         min-height: 50px;
         margin-bottom: 10px;
     }
     .touch_tile_orange {
         background: #ffb300;
-        color: #000;
         min-height: 50px;
         margin-bottom: 10px;
     }
@@ -64,6 +59,13 @@ class TouchTile(Gtk.Button):
         YELLOW,
         ORANGE,
     }
+    _COLOR_HEX = {
+        GREEN: "#4caf50",
+        BLUE: "#90caf9", 
+        RED: "#e53935",
+        YELLOW: "#ffd600",
+        ORANGE: "#ffb300",
+    }
 
     def __init__(self, label=None, color=GREEN, **kwargs):
         ensure_touch_css_loaded()
@@ -75,6 +77,13 @@ class TouchTile(Gtk.Button):
 
         self.set_color(color)
 
+    def _calculate_brightness(self, hex_color):
+        """Calculate relative brightness of a hex color (0-1 scale)."""
+        hex_color = hex_color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        # Use standard luminance formula
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
     def set_color(self, color):
         """
         Set the appearance of the button to a primary color.
@@ -83,8 +92,37 @@ class TouchTile(Gtk.Button):
         """
         if color not in self._VALID_COLORS:
             raise ValueError(f"Unsupported color: {color}")
+        
         style_context = self.get_style_context()
+        
+        # Remove all existing color classes
         for c in self._VALID_COLORS:
             style_context.remove_class(f"touch_tile_{c}")
+        
+        # Remove any existing custom CSS providers
+        if hasattr(self, '_color_provider'):
+            style_context.remove_provider(self._color_provider)
+        
+        # Add the new color class
         style_context.add_class(f"touch_tile_{color}")
+        
+        # Set text color based on background brightness
+        brightness = self._calculate_brightness(self._COLOR_HEX[color])
+        text_color = "black" if brightness >= 0.5 else "white"
+        bg_color = self._COLOR_HEX[color]
+        
+        # Create a complete CSS override that includes both background and text color
+        css_override = f"""
+        .touch_tile_{color} {{
+            background: {bg_color};
+            color: {text_color};
+            min-height: 50px;
+            margin-bottom: 10px;
+        }}
+        """
+        
+        # Apply the CSS override
+        self._color_provider = Gtk.CssProvider()
+        self._color_provider.load_from_data(css_override.encode())
+        style_context.add_provider(self._color_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
