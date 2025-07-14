@@ -7,34 +7,15 @@ import gi
 from gi.repository import Gtk, Gdk
 
 def ensure_touch_css_loaded():
-    """Ensure the touch CSS is loaded once per application."""
+    """Ensure the touch CSS for TouchTile is loaded once per application."""
     if getattr(ensure_touch_css_loaded, '_css_loaded', False):
         return
     css = b'''
-    .touch_tile_green {
-        background: #4caf50;
+    .touch_tile {
         min-height: 50px;
         margin-bottom: 10px;
-    }
-    .touch_tile_blue {
-        background: #90caf9;
-        min-height: 50px;
-        margin-bottom: 10px;
-    }
-    .touch_tile_red {
-        background: #e53935;
-        min-height: 50px;
-        margin-bottom: 10px;
-    }
-    .touch_tile_yellow {
-        background: #ffd600;
-        min-height: 50px;
-        margin-bottom: 10px;
-    }
-    .touch_tile_orange {
-        background: #ffb300;
-        min-height: 50px;
-        margin-bottom: 10px;
+        border-radius: 8px;
+        font-size: 1.1em;
     }
     '''
     style_provider = Gtk.CssProvider()
@@ -46,43 +27,30 @@ def ensure_touch_css_loaded():
     )
     ensure_touch_css_loaded._css_loaded = True
 
+
 class TouchTile(Gtk.Button):
     GREEN = "green"
     BLUE = "blue"
     RED = "red"
     YELLOW = "yellow"
     ORANGE = "orange"
-    _VALID_COLORS = {
-        GREEN,
-        BLUE,
-        RED,
-        YELLOW,
-        ORANGE,
-    }
-    _COLOR_HEX = {
-        GREEN: "#4caf50",
-        BLUE: "#90caf9", 
-        RED: "#e53935",
-        YELLOW: "#ffd600",
-        ORANGE: "#ffb300",
+    _VALID_COLORS = {GREEN, BLUE, RED, YELLOW, ORANGE}
+    # Pre-calculate text color for each background
+    _COLOR_STYLE = {
+        GREEN:  ("#4caf50",  "white"),
+        BLUE:   ("#90caf9",  "black"),
+        RED:    ("#e53935",  "white"),
+        YELLOW: ("#ffd600",  "black"),
+        ORANGE: ("#ffb300",  "black"),
     }
 
     def __init__(self, label=None, color=GREEN, **kwargs):
         ensure_touch_css_loaded()
         super().__init__(label=label, **kwargs)
-        
-        #  ??  Shouldn't this be in the CSS?
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_size_request(-1, 25)
-
+        self.get_style_context().add_class("touch_tile")
         self.set_color(color)
-
-    def _calculate_brightness(self, hex_color):
-        """Calculate relative brightness of a hex color (0-1 scale)."""
-        hex_color = hex_color.lstrip('#')
-        r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-        # Use standard luminance formula
-        return (0.299 * r + 0.587 * g + 0.114 * b) / 255
 
     def set_color(self, color):
         """
@@ -92,36 +60,17 @@ class TouchTile(Gtk.Button):
         """
         if color not in self._VALID_COLORS:
             raise ValueError(f"Unsupported color: {color}")
-        
         style_context = self.get_style_context()
-        
-        # Remove all existing color classes
-        for c in self._VALID_COLORS:
-            style_context.remove_class(f"touch_tile_{c}")
-        
         # Remove any existing custom CSS providers
         if hasattr(self, '_color_provider'):
             style_context.remove_provider(self._color_provider)
-        
-        # Add the new color class
-        style_context.add_class(f"touch_tile_{color}")
-        
-        # Set text color based on background brightness
-        brightness = self._calculate_brightness(self._COLOR_HEX[color])
-        text_color = "black" if brightness >= 0.5 else "white"
-        bg_color = self._COLOR_HEX[color]
-        
-        # Create a complete CSS override that includes both background and text color
+        bg_color, text_color = self._COLOR_STYLE[color]
         css_override = f"""
-        .touch_tile_{color} {{
+        .touch_tile {{
             background: {bg_color};
             color: {text_color};
-            min-height: 50px;
-            margin-bottom: 10px;
         }}
         """
-        
-        # Apply the CSS override
         self._color_provider = Gtk.CssProvider()
         self._color_provider.load_from_data(css_override.encode())
         style_context.add_provider(self._color_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
