@@ -49,20 +49,25 @@ class ConfigChooser(Gtk.VBox):
             self.config_files = sorted(config_files)
             current_path = dsp_controller.config.file_path()
             self._current_config = os.path.basename(current_path) if current_path else None
+
+            self._configs = {}
+            for f in self.config_files:
+                config = dsp_controller.config.read_and_parse_file(os.path.join(self.config_dir, f))
+                self._configs[f] = config
+                button = tt.TouchTile(label=config.get("title", f), color=self.UNSELECTED_COLOR)
+                if f == self._current_config:
+                    button.set_color(self.SELECTED_COLOR)
+                    self._selected_button = button
+                button.connect("clicked", self._on_rect_button_clicked, f)
+                self.config_buttons_box.pack_start(button, False, False, 0)
+
         except Exception as e:
             error_label = Gtk.Label(label=f"Error: {e}")
             self.pack_start(error_label, False, False, 0)
             return
         finally:
             dsp_controller.disconnect()
-            
-        for f in self.config_files:
-            button = tt.TouchTile(label=f, color=self.UNSELECTED_COLOR)
-            if f == self._current_config:
-                button.set_color(self.SELECTED_COLOR)
-                self._selected_button = button
-            button.connect("clicked", self._on_rect_button_clicked, f)
-            self.config_buttons_box.pack_start(button, False, False, 0)
+
 
 
     def _change_selected_config(self, selected_button, new_config):
