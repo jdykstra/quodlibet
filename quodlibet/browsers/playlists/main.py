@@ -102,6 +102,10 @@ class PlaylistsBrowser(Browser, DisplayPatternMixin):
         del self._ids
 
     def pack(self, songpane):
+    
+        # Critical: Show self before packing (like PanedBrowser does)
+        self.show()
+        
         self._main_box.pack1(self, True, False)
         self._rh_box = rhbox = Gtk.VBox(spacing=6)
         align = Align(self._sb_box, left=0, right=6, top=0)
@@ -125,15 +129,13 @@ class PlaylistsBrowser(Browser, DisplayPatternMixin):
         return [row[0] for row in self._lists]
 
     def changed(self, playlist, refresh=True):
-        current = self._selected_playlist()
+        # JWD - Apply fix from main branch for missing left-hand pane.
         for row in self._lists:
             if row[0] is playlist:
                 if refresh:
                     # Changes affect aggregate caches etc
                     print_d(f"Refreshing view in {self} for {playlist}")
                     self._lists.row_changed(row.path, row.iter)
-                    if playlist is current:
-                        self.activate()
                 break
 
     def __removed(self, lib, playlists):
