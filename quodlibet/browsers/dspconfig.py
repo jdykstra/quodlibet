@@ -6,6 +6,7 @@ from gi.repository import Gtk, Gdk
 from gi.repository import GObject
 
 from quodlibet import qltk
+from quodlibet import config
 from quodlibet.qltk.menubutton import MenuButton
 
 from ..player.dsp import DspController, dsp_controller
@@ -32,12 +33,20 @@ class ConfigChooser(Gtk.VBox):
         label_box.pack_start(label, True, True, 0)
         self.pack_start(label_box, False, False, 0)
 
-        # Create a container for config buttons.
+        # Create a container for config buttons in a scrolled window.
         self.rect_buttons = []
         self.button_to_config = {}
         self.config_buttons_box = Gtk.VBox()
+        
+        # Create a scrolled window for the config buttons
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled_window.set_min_content_height(100)
+        scrolled_window.set_max_content_height(300)
+        scrolled_window.add(self.config_buttons_box)
+        
         self._create_buttons()
-        self.pack_start(self.config_buttons_box, False, False, 0)
+        self.pack_start(scrolled_window, True, True, 0)
 
     def _create_buttons(self):
         """
@@ -163,7 +172,20 @@ class DspControlWindow(qltk.UniqueWindow):
             return
         super().__init__()
         self.set_transient_for(qltk.get_top_parent(browser))
-        self.set_default_size(350, 200)
+        
+        # Load persistent size and position
+        width = config.getint("browsers", "dsp_window_width", 450)
+        height = config.getint("browsers", "dsp_window_height", 300)
+        self.set_default_size(width, height)
+        
+        # Load persistent position if available
+        try:
+            x = config.getint("browsers", "dsp_window_x")
+            y = config.getint("browsers", "dsp_window_y")
+            self.move(x, y)
+        except config.Error:
+            pass  # Use default positioning
+            
         self.set_border_width(12)
         self.set_title("Camilla DSP")
         
@@ -172,11 +194,22 @@ class DspControlWindow(qltk.UniqueWindow):
         self.status_pane = DspStatusPane()
         hbox.pack_start(self.status_pane, False, False, 0)
         configChooser = ConfigChooser(browser)
+        # Make config chooser fill vertically to match status pane height
         hbox.pack_start(configChooser, True, True, 0)
         self.add(hbox)
         self.get_child().show_all()
-        # Remove duplicate start_auto_refresh call since it's now in __init__
+        
+        # Connect signals for saving window state
         self.connect("destroy", self._on_destroy)
+        self.connect("configure-event", self._on_configure)
+
+    def _on_configure(self, widget, event):
+        """Save window size and position when changed"""
+        config.set("browsers", "dsp_window_width", event.width)
+        config.set("browsers", "dsp_window_height", event.height)
+        config.set("browsers", "dsp_window_x", event.x)
+        config.set("browsers", "dsp_window_y", event.y)
+        return False
 
     def _on_destroy(self, *args):
         self.status_pane.stop_auto_refresh()

@@ -16,6 +16,7 @@ from quodlibet import config
 from quodlibet import qltk
 from quodlibet.browsers import Browser
 from quodlibet.browsers._base import DisplayPatternMixin, BrowserError
+from quodlibet.browsers.dspconfig import DspWindowOpener
 from quodlibet.browsers.playlists.prefs import Preferences, DEFAULT_PATTERN_TEXT
 from quodlibet.formats import AudioFile
 from quodlibet.library import SongFileLibrary
@@ -108,12 +109,21 @@ class PlaylistsBrowser(Browser, DisplayPatternMixin):
         
         self._main_box.pack1(self, True, False)
         self._rh_box = rhbox = Gtk.VBox(spacing=6)
+        
+        # Create a horizontal box for search bar and DSP button
+        search_hbox = Gtk.HBox(spacing=6)
         align = Align(self._sb_box, left=0, right=6, top=0)
-        rhbox.pack_start(align, False, True, 0)
+        search_hbox.pack_start(align, True, True, 0)
+        
+        # Add DSP button to the right of the search box
+        dsp_button = DspWindowOpener(self)
+        search_hbox.pack_start(dsp_button, False, False, 0)
+        
+        rhbox.pack_start(search_hbox, False, True, 0)
         rhbox.pack_start(songpane, True, True, 0)
         self._main_box.pack2(rhbox, True, False)
         rhbox.show()
-        align.show_all()
+        search_hbox.show_all()
         return self._main_box
 
     def unpack(self, container, songpane):
