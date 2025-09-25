@@ -3,20 +3,26 @@ import os
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
+from gi.repository import GObject
 
 from quodlibet import qltk
 from quodlibet.qltk.menubutton import MenuButton
-from quodlibet.qltk.touch import ensure_touch_css_loaded, set_touch_tile_color
 
 from ..player.dsp import DspController, dsp_controller
+import quodlibet.qltk.touch as tt
 
-class ConfigSelector(Gtk.VBox):
+
+class ConfigChooser(Gtk.VBox):
+
+    SELECTED_COLOR = tt.TouchTile.GREEN
+    UNSELECTED_COLOR = tt.TouchTile.BLUE
+
     def __init__(self, browser):
         super().__init__(spacing=10)
         self.browser = browser
         
         self.selected_config = None
-        ensure_touch_css_loaded()
+        tt.ensure_touch_css_loaded()
 
         # Create a label
         label = Gtk.Label(label="Active Configuration")
@@ -30,53 +36,41 @@ class ConfigSelector(Gtk.VBox):
         self.rect_buttons = []
         self.button_to_config = {}
         self.config_buttons_box = Gtk.VBox()
-        self.create_config_chooser()
-        for button in self.rect_buttons:
-            self.config_buttons_box.pack_start(button, False, False, 0)
+        self._create_buttons()
         self.pack_start(self.config_buttons_box, False, False, 0)
 
-    def create_config_chooser(self):
+    def _create_buttons(self):
         """
         Create rectangle buttons for each configuration file, colored red if unselected and green if selected.
         """
         try:
             dsp_controller.connect()
             self.config_dir, config_files = dsp_controller.get_configs()
+            self.config_files = sorted(config_files)
             current_path = dsp_controller.config.file_path()
-            current_file = os.path.basename(current_path) if current_path else None
+            self._current_config = os.path.basename(current_path) if current_path else None
+
+            self._configs = {}
+            for f in self.config_files:
+                config = dsp_controller.config.read_and_parse_file(os.path.join(self.config_dir, f))
+                self._configs[f] = config
+                button = tt.TouchTile(label=config.get("title", f), color=self.UNSELECTED_COLOR)
+                if f == self._current_config:
+                    button.set_color(self.SELECTED_COLOR)
+                    self._selected_button = button
+                button.connect("clicked", self._on_rect_button_clicked, f)
+                self.config_buttons_box.pack_start(button, False, False, 0)
+
         except Exception as e:
             error_label = Gtk.Label(label=f"Error: {e}")
             self.pack_start(error_label, False, False, 0)
             return
         finally:
             dsp_controller.disconnect()
-            
-        self.rect_buttons = []
-        self.button_to_config = {}
-        config_files = list(config_files)  
-        for config_file in config_files:
-            button = Gtk.Button(label=config_file)
-            button.set_relief(Gtk.ReliefStyle.NONE)
-            button.set_size_request(-1, 25)
-            button.connect("clicked", self.on_rect_button_clicked, config_file)
-            self.rect_buttons.append(button)
-            self.button_to_config[button] = config_file
 
-        # Select the button matching the current config file, if any
-        #  ??  Change the color, but don't command the DSP.
-        #  ??  There's got to be a a way to do with with button_to_config.
-        selected_button = None
-        for button, config_file in self.button_to_config.items():
-            if config_file == current_file:
-                selected_button = button
-                break
 
-        if selected_button:
-            self.select_rect_button(selected_button, current_file)
-        elif self.rect_buttons:
-            self.select_rect_button(self.rect_buttons[0], config_files[0])
 
-    def select_rect_button(self, selected_button, new_config):
+    def _change_selected_config(self, selected_button, new_config):
         try:
             dsp_controller.connect()
             dsp_controller.config.set_file_path(os.path.join(self.config_dir, new_config))
@@ -88,12 +82,79 @@ class ConfigSelector(Gtk.VBox):
         finally:
             dsp_controller.disconnect()
 
-        for button in self.rect_buttons:
-            set_touch_tile_color(button, "green" if button == selected_button else "blue")
-        self.selected_config = new_config
 
-    def on_rect_button_clicked(self, button, new_config):
-        self.select_rect_button(button, new_config)
+    def _on_rect_button_clicked(self, button, new_config):
+        self._change_selected_config(button, new_config)
+        if self._selected_button:
+            self._selected_button.set_color(self.UNSELECTED_COLOR)
+        button.set_color(self.SELECTED_COLOR)    
+        self._current_config = new_config
+        self._selected_button = button
+
+
+class DspStatusPane(Gtk.VBox):
+    """
+    Pane to display the current DSP status as a TouchTile.
+    """
+    STATE_COLORS = {
+        "running": tt.TouchTile.GREEN,
+        "starting": tt.TouchTile.YELLOW,
+        "stalled": tt.TouchTile.RED,
+        "paused": tt.TouchTile.BLUE,
+        "inactive": tt.TouchTile.ORANGE,
+    }
+
+    def __init__(self):
+        super().__init__(spacing=10)
+        tt.ensure_touch_css_loaded()
+        # Add a label above the TouchTile
+        label = Gtk.Label(label="Status")
+        label.set_justify(Gtk.Justification.CENTER)
+        label.set_alignment(0.5, 0.5)
+        self.pack_start(label, False, False, 0)
+        self.status_tile = tt.TouchTile(label="...", color=tt.TouchTile.BLUE)
+        self.pack_start(self.status_tile, False, False, 0)
+        self._refresh_id = None
+        self.update_status()
+        self.start_auto_refresh()  # Start auto-refresh immediately
+
+    def update_status(self):
+        try:
+            dsp_controller.connect()
+            state = dsp_controller.general.state()
+            state_str = getattr(state, 'name', str(state)).lower()  # Ensure lowercase
+            color = self.STATE_COLORS.get(state_str, tt.TouchTile.BLUE)
+            self.status_tile.set_label(state_str.title())  # Display with proper case
+            
+            # Force the color change and redraw
+            old_color = getattr(self.status_tile, '_current_color', None)
+            self.status_tile.set_color(color)
+            self.status_tile._current_color = color
+            
+            # Force a redraw
+            self.status_tile.queue_draw()
+            
+            print(f"Status updated: {state_str} -> {color} (was {old_color})")  # Debug output
+        except Exception as e:
+            self.status_tile.set_label("Error")
+            self.status_tile.set_color(tt.TouchTile.RED)
+            self.status_tile.queue_draw()
+            print(f"Status update error: {e}")  # Debug output
+        finally:
+            dsp_controller.disconnect()
+
+    def start_auto_refresh(self):
+        if self._refresh_id is None:
+            self._refresh_id = GObject.timeout_add(1000, self._on_timeout)
+
+    def stop_auto_refresh(self):
+        if self._refresh_id is not None:
+            GObject.source_remove(self._refresh_id)
+            self._refresh_id = None
+
+    def _on_timeout(self):
+        self.update_status()
+        return True  # Continue calling
 
 
 class DspControlWindow(qltk.UniqueWindow):
@@ -105,11 +166,23 @@ class DspControlWindow(qltk.UniqueWindow):
         self.set_default_size(350, 200)
         self.set_border_width(12)
         self.set_title("Camilla DSP")
-        vbox = ConfigSelector(browser)
-        self.add(vbox)
+        
+        # Create a horizontal box to hold the status pane and config chooser
+        hbox = Gtk.HBox(spacing=12)
+        self.status_pane = DspStatusPane()
+        hbox.pack_start(self.status_pane, False, False, 0)
+        configChooser = ConfigChooser(browser)
+        hbox.pack_start(configChooser, True, True, 0)
+        self.add(hbox)
         self.get_child().show_all()
+        # Remove duplicate start_auto_refresh call since it's now in __init__
+        self.connect("destroy", self._on_destroy)
 
-class DspWindowButton(Gtk.HBox):
+    def _on_destroy(self, *args):
+        self.status_pane.stop_auto_refresh()
+
+
+class DspWindowOpener(Gtk.HBox):
     """
     Click this button to open the DSP configuration window.
     """

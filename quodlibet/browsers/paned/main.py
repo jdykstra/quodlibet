@@ -30,7 +30,7 @@ from quodlibet.qltk.paned import ConfigMultiRHPaned
 from .prefs import PreferencesButton, ColumnMode
 from .util import get_headers
 from .pane import Pane
-from quodlibet.browsers.dspconfig import DspWindowButton
+from quodlibet.browsers.dspconfig import DspWindowOpener
 
 
 
@@ -99,7 +99,7 @@ class PanedBrowser(Browser, util.InstanceTracker):
         sbb.pack_start(prefs, False, True, 0)
 
         # ??  This isn't where this button will live long-term.
-        dsp_button = DspWindowButton(self)
+        dsp_button = DspWindowOpener(self)
         sbb.pack_start(dsp_button, False, True, 0)
 
         connect_destroy(library, "changed", self.__changed)
