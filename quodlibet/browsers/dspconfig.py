@@ -8,7 +8,7 @@ from gi.repository import GObject
 from quodlibet import qltk
 from quodlibet.qltk.menubutton import MenuButton
 
-from ..player.dsp import DspController, dsp_controller
+from ..extapis.dsp import DspController, dsp_controller
 import quodlibet.qltk.touch as tt
 
 
