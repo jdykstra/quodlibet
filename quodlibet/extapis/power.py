@@ -5,7 +5,7 @@ import time
 class PowerController:
     """Interface to the external power controller via serial communication."""
 
-    def __init__(self, port: str = "/dev/ttyUSB0", baudrate: int = 9600, timeout: float = 1.0):
+    def __init__(self, port: str = "/dev/ttyACM0", baudrate: int = 9600, timeout: float = 1.0):
         """
         Initialize the power controller.
 
@@ -125,5 +125,5 @@ class PowerController:
 
 
 # Create the singleton controller
-POWER_CONTROLLER_PORT = "/dev/ttyUSB0"  # Default serial port
+POWER_CONTROLLER_PORT = "/dev/ttyACM0"  # Adjust as necessary
 power_controller = PowerController(port=POWER_CONTROLLER_PORT)
