@@ -3,7 +3,7 @@ import time
 
 
 class PowerController:
-    """Controller for external power management via serial port."""
+    """Interface to the external power controller via serial communication."""
 
     def __init__(self, port: str = "/dev/ttyUSB0", baudrate: int = 9600, timeout: float = 1.0):
         """

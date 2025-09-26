@@ -320,10 +320,72 @@ class QueueButton(HighlightToggleButton):
         self.set_tooltip_text(_("Toggle queue visibility"))
 
 
+class PowerButton(HighlightToggleButton):
+    """A toggle button that controls system or refrigerator power."""
+
+    def __init__(self, device_type: str, *args, **kwargs):
+        """
+        Initialize the power button.
+
+        Args:
+            device_type: Either "system" or "refrigerator"
+            *args, **kwargs: Arguments passed to HighlightToggleButton
+        """
+        if device_type not in ["system", "refrigerator"]:
+            raise ValueError("device_type must be 'system' or 'refrigerator'")
+
+        super().__init__(*args, **kwargs)
+        self.device_type = device_type
+
+        # Set appropriate icon and tooltip based on device type
+        if device_type == "system":
+            # Use a power icon for system
+            gicon = Gio.ThemedIcon.new_from_names(
+                ["system-shutdown-symbolic", "application-exit-symbolic"])
+            self.set_tooltip_text(_("Toggle system power"))
+        else:  # refrigerator
+            # Use a temperature/cold icon for refrigerator
+            gicon = Gio.ThemedIcon.new_from_names(
+                ["temperature-symbolic", "weather-clear-night-symbolic"])
+            self.set_tooltip_text(_("Toggle refrigerator power"))
+
+        image = Gtk.Image.new_from_gicon(gicon, Gtk.IconSize.SMALL_TOOLBAR)
+        self.set_image(image)
+        self.set_size_request(26, 26)
+
+        # Connect to the toggled signal
+        self.connect("toggled", self._on_toggled)
+
+    def _on_toggled(self, button):
+        """Handle the toggle event by calling the appropriate power API."""
+        try:
+            from quodlibet.extapis.power import power_controller
+
+            state = "on" if button.get_active() else "off"
+
+            if self.device_type == "system":
+                success = power_controller.set_system_power(state)
+            else:  # refrigerator
+                success = power_controller.set_refrigerator_power(state)
+
+            if not success:
+                print(f"Warning: Failed to set {self.device_type} power to {state}")
+
+        except Exception as e:
+            print(f"Error controlling {self.device_type} power: {e}")
+            # Reset the button state on error
+            button.set_active(not button.get_active())
+
+
 class StatusBarBox(Gtk.HBox):
 
     def __init__(self, play_order, queue):
         super().__init__(spacing=6)
+
+        # Create and pack the power button as the first element
+        power_button = PowerButton("system")
+        self.pack_start(power_button, False, True, 0)
+
         self.pack_start(play_order, False, True, 0)
 
         # Display the local time, updated every second.
