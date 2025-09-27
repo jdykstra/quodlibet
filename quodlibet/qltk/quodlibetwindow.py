@@ -373,11 +373,11 @@ class PowerButton(HighlightToggleButton):
                 success = power_controller.set_refrigerator_power(state)
 
             if not success:
-                print(f"Warning: Failed to set {self.device_type} power to {state}")
+                ErrorMessage(None, f"Power Controller Error", f"Warning: Failed to set {self.device_type} power to {state}").run()
                 button.set_active(not button.get_active())
 
         except Exception as e:
-            print(f"Error controlling {self.device_type} power: {e}")
+            ErrorMessage(None, f"Power Controller Error", f"Error controlling {self.device_type} power: {e}").run()
             # Reset the button state on error
             button.set_active(not button.get_active())
         finally:
