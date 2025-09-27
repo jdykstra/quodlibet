@@ -320,35 +320,23 @@ class QueueButton(HighlightToggleButton):
         self.set_tooltip_text(_("Toggle queue visibility"))
 
 
-class PowerButton(HighlightToggleButton):
-    """A toggle button that controls system or refrigerator power."""
+class SystemPowerButton(HighlightToggleButton):
+    """A toggle button that controls system power."""
 
-    def __init__(self, device_type: str, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
-        Initialize the power button.
+        Initialize the system power button.
 
         Args:
-            device_type: Either "system" or "refrigerator"
             *args, **kwargs: Arguments passed to HighlightToggleButton
         """
-        if device_type not in ["system", "refrigerator"]:
-            raise ValueError("device_type must be 'system' or 'refrigerator'")
-
         super().__init__(*args, **kwargs)
-        self.device_type = device_type
-        self.__inhibit = False  
+        self.__inhibit = False
 
-        # Set appropriate icon and tooltip based on device type
-        if device_type == "system":
-            # Use a power icon for system
-            gicon = Gio.ThemedIcon.new_from_names(
-                ["system-shutdown-symbolic", "application-exit-symbolic"])
-            self.set_tooltip_text(_("Toggle system power"))
-        else:  # refrigerator
-            # Use a temperature/cold icon for refrigerator
-            gicon = Gio.ThemedIcon.new_from_names(
-                ["temperature-symbolic", "weather-clear-night-symbolic"])
-            self.set_tooltip_text(_("Toggle refrigerator power"))
+        # Use a power icon for system
+        gicon = Gio.ThemedIcon.new_from_names(
+            ["system-shutdown-symbolic", "application-exit-symbolic"])
+        self.set_tooltip_text(_("Toggle system power"))
 
         image = Gtk.Image.new_from_gicon(gicon, Gtk.IconSize.SMALL_TOOLBAR)
         self.set_image(image)
@@ -358,7 +346,7 @@ class PowerButton(HighlightToggleButton):
         self.connect("toggled", self._on_toggled)
 
     def _on_toggled(self, button):
-        """Handle the toggle event by calling the appropriate power API."""
+        """Handle the toggle event by calling the system power API."""
         if self.__inhibit:
             return
         self.__inhibit = True
@@ -366,18 +354,62 @@ class PowerButton(HighlightToggleButton):
             from quodlibet.extapis.power import power_controller
 
             state = "on" if button.get_active() else "off"
-
-            if self.device_type == "system":
-                success = power_controller.set_system_power(state)
-            else:  # refrigerator
-                success = power_controller.set_refrigerator_power(state)
+            success = power_controller.set_system_power(state)
 
             if not success:
-                ErrorMessage(None, f"Power Controller Error", f"Warning: Failed to set {self.device_type} power to {state}").run()
+                ErrorMessage(None, "Power Controller Error", f"Warning: Failed to set system power to {state}").run()
                 button.set_active(not button.get_active())
 
         except Exception as e:
-            ErrorMessage(None, f"Power Controller Error", f"Error controlling {self.device_type} power: {e}").run()
+            ErrorMessage(None, "Power Controller Error", f"Error controlling system power: {e}").run()
+            # Reset the button state on error
+            button.set_active(not button.get_active())
+        finally:
+            self.__inhibit = False
+
+
+class RefrigeratorPowerButton(HighlightToggleButton):
+    """A toggle button that controls refrigerator power."""
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize the refrigerator power button.
+
+        Args:
+            *args, **kwargs: Arguments passed to HighlightToggleButton
+        """
+        super().__init__(*args, **kwargs)
+        self.__inhibit = False
+
+        # Use a temperature/cold icon for refrigerator
+        gicon = Gio.ThemedIcon.new_from_names(
+            ["temperature-symbolic", "weather-clear-night-symbolic"])
+        self.set_tooltip_text(_("Toggle refrigerator power"))
+
+        image = Gtk.Image.new_from_gicon(gicon, Gtk.IconSize.SMALL_TOOLBAR)
+        self.set_image(image)
+        self.set_size_request(26, 26)
+
+        # Connect to the toggled signal
+        self.connect("toggled", self._on_toggled)
+
+    def _on_toggled(self, button):
+        """Handle the toggle event by calling the refrigerator power API."""
+        if self.__inhibit:
+            return
+        self.__inhibit = True
+        try:
+            from quodlibet.extapis.power import power_controller
+
+            state = "on" if button.get_active() else "off"
+            success = power_controller.set_refrigerator_power(state)
+
+            if not success:
+                ErrorMessage(None, "Power Controller Error", f"Warning: Failed to set refrigerator power to {state}").run()
+                button.set_active(not button.get_active())
+
+        except Exception as e:
+            ErrorMessage(None, "Power Controller Error", f"Error controlling refrigerator power: {e}").run()
             # Reset the button state on error
             button.set_active(not button.get_active())
         finally:
@@ -389,9 +421,13 @@ class StatusBarBox(Gtk.HBox):
     def __init__(self, play_order, queue):
         super().__init__(spacing=6)
 
-        # Create and pack the power button as the first element
-        power_button = PowerButton("system")
-        self.pack_start(power_button, False, True, 0)
+        # Create and pack the system power button as the first element
+        system_power_button = SystemPowerButton()
+        self.pack_start(system_power_button, False, True, 0)
+
+        # Create and pack the refrigerator power button
+        fridge_power_button = RefrigeratorPowerButton()
+        self.pack_start(fridge_power_button, False, True, 0)
 
         self.pack_start(play_order, False, True, 0)
 
