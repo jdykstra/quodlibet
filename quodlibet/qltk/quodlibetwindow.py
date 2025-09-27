@@ -336,6 +336,7 @@ class PowerButton(HighlightToggleButton):
 
         super().__init__(*args, **kwargs)
         self.device_type = device_type
+        self.__inhibit = False  
 
         # Set appropriate icon and tooltip based on device type
         if device_type == "system":
