@@ -358,6 +358,9 @@ class PowerButton(HighlightToggleButton):
 
     def _on_toggled(self, button):
         """Handle the toggle event by calling the appropriate power API."""
+        if self.__inhibit:
+            return
+        self.__inhibit = True
         try:
             from quodlibet.extapis.power import power_controller
 
@@ -370,11 +373,14 @@ class PowerButton(HighlightToggleButton):
 
             if not success:
                 print(f"Warning: Failed to set {self.device_type} power to {state}")
+                button.set_active(not button.get_active())
 
         except Exception as e:
             print(f"Error controlling {self.device_type} power: {e}")
             # Reset the button state on error
             button.set_active(not button.get_active())
+        finally:
+            self.__inhibit = False
 
 
 class StatusBarBox(Gtk.HBox):
