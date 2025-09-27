@@ -1,13 +1,14 @@
 import serial
 import time
 
+POWER_CONTROLLER_PORT = "/dev/ttyACM0"  # Hardwired port for the power controller
 
 class PowerController:
     """Interface to the external power controller via serial communication."""
 
-    def __init__(self, port: str = "/dev/ttyACM0", baudrate: int = 9600, timeout: float = 1.0):
+    def __init__(self, port: str = POWER_CONTROLLER_PORT, baudrate: int = 9600, timeout: float = 10.0):
         """
-        Initialize the power controller.
+        Initialize the serial link to the power controller.
 
         Args:
             port: Serial port device path
@@ -18,6 +19,7 @@ class PowerController:
         self.baudrate = baudrate
         self.timeout = timeout
         self._serial = None
+
 
     def _connect(self):
         """Establish serial connection if not already connected."""
@@ -32,10 +34,12 @@ class PowerController:
             except serial.SerialException as e:
                 raise ConnectionError(f"Failed to connect to power controller on {self.port}: {e}")
 
+
     def _disconnect(self):
         """Close serial connection."""
         if self._serial and self._serial.is_open:
             self._serial.close()
+
 
     def _send_command(self, command: str) -> str:
         """
@@ -51,15 +55,6 @@ class PowerController:
             ConnectionError: If serial communication fails
             ValueError: If command format is invalid
         """
-        if not command or len(command.split()) != 2:
-            raise ValueError("Command must be in format 'device state'")
-
-        device, state = command.split()
-        if device not in ["system", "refrigerator"]:
-            raise ValueError("Device must be 'system' or 'refrigerator'")
-        if state not in ["on", "off"]:
-            raise ValueError("State must be 'on' or 'off'")
-
         self._connect()
         assert self._serial is not None, "Serial connection failed"
 
@@ -79,6 +74,7 @@ class PowerController:
         except serial.SerialException as e:
             raise ConnectionError(f"Serial communication error: {e}")
 
+
     def set_system_power(self, state: str) -> bool:
         """
         Set system power state.
@@ -94,6 +90,7 @@ class PowerController:
         response = self._send_command(f"set system {state}")
         return response == "OK"
 
+
     def set_refrigerator_power(self, state: str) -> bool:
         """
         Set refrigerator power state.
@@ -106,18 +103,21 @@ class PowerController:
         """
         if state not in ["on", "off"]:
             raise ValueError("State must be 'on' or 'off'")
-        response = self._send_command(f"setrefrigerator {state}")
+        response = self._send_command(f"set refrigerator {state}")
         return response == "OK"
+
 
     def get_system_status(self) -> str:
         """Get current system power status. Note: This may not be implemented by hardware."""
         # This would require a status query command if supported by the hardware
         raise NotImplementedError("Status queries not implemented")
 
+
     def get_refrigerator_status(self) -> str:
         """Get current refrigerator power status. Note: This may not be implemented by hardware."""
         # This would require a status query command if supported by the hardware
         raise NotImplementedError("Status queries not implemented")
+
 
     def close(self):
         """Clean up and close the serial connection."""
@@ -125,5 +125,4 @@ class PowerController:
 
 
 # Create the singleton controller
-POWER_CONTROLLER_PORT = "/dev/ttyACM0"  # Adjust as necessary
 power_controller = PowerController(port=POWER_CONTROLLER_PORT)

@@ -67,6 +67,8 @@ python setup.py clean --all
 - **Network tests**: Skip with `--no-network` flag
 
 ## Code Patterns & Conventions
+Use these patterns when contributing:
+Separate functions and classes with two blank lines.
 
 ### Configuration Access
 ```python
