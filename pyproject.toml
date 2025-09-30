@@ -1,3 +1,6 @@
+# Each time this file is modified, run "python3 -m poetry update" from within the 
+# music server Python environment and commit the resulting "poetry.lock" file.
+
 [tool.poetry]
 name = "quodlibet"
 version = "4.7.0-pre"
