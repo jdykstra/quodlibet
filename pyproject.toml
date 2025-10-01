@@ -29,7 +29,7 @@ mutagen = "^1.45"
 feedparser = "^6.0.11"
 pycairo = "^1.19"
 pygobject = "^3.34.0"
-pycamilladsp = { git = "https://github.com/HEnquist/camilladsp.git", tag = "v2.0.2" }
+camilladsp = { git = "https://github.com/HEnquist/pycamilladsp.git", tag = "v2.0.2" }
 pyserial = "^3.5"
 
 # Optional (mainly plugins)
