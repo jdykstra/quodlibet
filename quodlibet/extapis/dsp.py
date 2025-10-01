@@ -1,7 +1,7 @@
 
 import os
 
-from camilladsp import CamillaClient
+from camilladsp import doe
 
 class DspController(CamillaClient):
     def __init__(self, host: str, port: int):

@@ -3,6 +3,8 @@
 ## Project Overview
 Quod Libet is a cross-platform GTK+ audio library manager and player written in Python. It features a plugin-based architecture with over 90 included plugins, comprehensive metadata editing, and flexible browsing capabilities.
 
+Git branch 'music-server-main' is a personal branch that will never be merged into 'main'.  
+
 ## Architecture & Components
 
 ### Core Application Structure
@@ -65,6 +67,8 @@ python setup.py clean --all
 - **Network tests**: Skip with `--no-network` flag
 
 ## Code Patterns & Conventions
+Use these patterns when contributing:
+Separate functions and classes with two blank lines.
 
 ### Configuration Access
 ```python
@@ -148,5 +152,6 @@ text = N_("text")              # Mark for translation only
 - **Version info**: Defined in `quodlibet/const.py` as `VERSION_TUPLE`
 - **Build metadata**: `pyproject.toml` (Poetry) and `setup.py` (gdist) coexist
 - **Assets**: Icons in `quodlibet/images/`, data files in `data/`
+- **External APIs**: `quodlibet/extapis` for communication with other processes and services
 
 When modifying core functionality, always check impact on browser filtering, plugin loading, and configuration management. The codebase emphasizes backward compatibility and graceful degradation when optional dependencies are missing.
