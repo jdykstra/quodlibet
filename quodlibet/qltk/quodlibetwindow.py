@@ -389,9 +389,9 @@ class StatusBarBox(Gtk.HBox):
     def __init__(self, play_order, queue):
         super().__init__(spacing=6)
 
-        # Create and pack the power button as the first element
-        power_button = PowerButton("system")
-        self.pack_start(power_button, False, True, 0)
+        # Create and pack the power buttons as the first elements.
+        self.pack_start(PowerButton("system"), False, True, 0) 
+        self.pack_start(PowerButton("refrigerator"), False, True, 0)
 
         self.pack_start(play_order, False, True, 0)
 
