@@ -93,9 +93,9 @@ class PowerController:
         return response == "OK"
 
 
-    def set_refrigerator_power(self, state: str) -> bool:
+    def set_refrigerator_power_override(self, state: str) -> bool:
         """
-        Set refrigerator power state.
+        Set refrigerator power override state.
 
         Args:
             state: "on" or "off"
@@ -105,7 +105,7 @@ class PowerController:
         """
         if state not in ["on", "off"]:
             raise ValueError("State must be 'on' or 'off'")
-        response = self._send_command(f"set refrigerator {state}")
+        response = self._send_command(f"set override {state}")
         return response == "OK"
 
 

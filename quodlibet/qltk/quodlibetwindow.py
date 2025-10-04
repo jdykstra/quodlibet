@@ -344,7 +344,7 @@ class PowerButton(HighlightToggleButton):
             gicon = Gio.ThemedIcon.new_from_names(
                 ["system-shutdown-symbolic", "application-exit-symbolic"])
             self.set_tooltip_text(_("Toggle system power"))
-        else:  # refrigerator
+        else:  # refrigerator override
             # Use a temperature/cold icon for refrigerator
             gicon = Gio.ThemedIcon.new_from_names(
                 ["temperature-symbolic", "weather-clear-night-symbolic"])
@@ -370,7 +370,7 @@ class PowerButton(HighlightToggleButton):
             if self.device_type == "system":
                 success = power_controller.set_system_power(state)
             else:  # refrigerator
-                success = power_controller.set_refrigerator_power(state)
+                success = power_controller.set_refrigerator_power_override(state)
 
             if not success:
                 ErrorMessage(None, f"Power Controller Error", f"Warning: Failed to set {self.device_type} power to {state}").run()
