@@ -1,6 +1,8 @@
 import serial
 import time
 
+from quodlibet.util.dprint import print_d
+
 POWER_CONTROLLER_PORT = "/dev/ttyACM0"  # Hardwired port for the power controller
 
 class PowerController:
@@ -62,11 +64,14 @@ class PowerController:
 
         try:
             # Send command with newline
-            self._serial.write(f"{command}\n".encode())
+            command_with_nl = f"{command}\n"
+            self._serial.write(command_with_nl.encode())
             self._serial.flush()
+            print_d(f"Power controller:  Sent command: {repr(command_with_nl)}")
 
             # Read response
             response = self._serial.readline().decode().strip()
+            print_d(f"Power controller:  Received response: {repr(response)}")
 
             if response not in ["OK", "ERR"]:
                 raise ValueError(f"Unexpected response from power controller: {response}")
@@ -93,9 +98,9 @@ class PowerController:
         return response == "OK"
 
 
-    def set_refrigerator_power_override(self, state: str) -> bool:
+    def set_refrigerator_override(self, state: str) -> bool:
         """
-        Set refrigerator power override state.
+        Set refrigerator override state.
 
         Args:
             state: "on" or "off"

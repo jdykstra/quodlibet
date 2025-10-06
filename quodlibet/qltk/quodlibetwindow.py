@@ -321,18 +321,18 @@ class QueueButton(HighlightToggleButton):
 
 
 class PowerButton(HighlightToggleButton):
-    """A toggle button that controls system or refrigerator power."""
+    """A toggle button that controls system or refrigerator override power."""
 
     def __init__(self, device_type: str, *args, **kwargs):
         """
         Initialize the power button.
 
         Args:
-            device_type: Either "system" or "refrigerator"
+            device_type: Either "system" or "override"
             *args, **kwargs: Arguments passed to HighlightToggleButton
         """
-        if device_type not in ["system", "refrigerator"]:
-            raise ValueError("device_type must be 'system' or 'refrigerator'")
+        if device_type not in ["system", "override"]:
+            raise ValueError("device_type must be 'system' or 'override'")
 
         super().__init__(*args, **kwargs)
         self.device_type = device_type
@@ -344,11 +344,11 @@ class PowerButton(HighlightToggleButton):
             gicon = Gio.ThemedIcon.new_from_names(
                 ["system-shutdown-symbolic", "application-exit-symbolic"])
             self.set_tooltip_text(_("Toggle system power"))
-        else:  # refrigerator override
-            # Use a temperature/cold icon for refrigerator
+        else: 
+            # Use a temperature/cold icon for refrigerator override
             gicon = Gio.ThemedIcon.new_from_names(
                 ["temperature-symbolic", "weather-clear-night-symbolic"])
-            self.set_tooltip_text(_("Toggle refrigerator power"))
+            self.set_tooltip_text(_("Toggle refrigerator override"))
 
         image = Gtk.Image.new_from_gicon(gicon, Gtk.IconSize.SMALL_TOOLBAR)
         self.set_image(image)
@@ -370,14 +370,14 @@ class PowerButton(HighlightToggleButton):
             if self.device_type == "system":
                 success = power_controller.set_system_power(state)
             else:  # refrigerator
-                success = power_controller.set_refrigerator_power_override(state)
+                success = power_controller.set_refrigerator_override(state)
 
             if not success:
-                ErrorMessage(None, f"Power Controller Error", f"Warning: Failed to set {self.device_type} power to {state}").run()
+                ErrorMessage(None, f"Power Controller Error", f"Warning: Failed to set {self.device_type} to {state}").run()
                 button.set_active(not button.get_active())
 
         except Exception as e:
-            ErrorMessage(None, f"Power Controller Error", f"Error controlling {self.device_type} power: {e}").run()
+            ErrorMessage(None, f"Power Controller Error", f"Error controlling {self.device_type}: {e}").run()
             # Reset the button state on error
             button.set_active(not button.get_active())
         finally:
@@ -389,9 +389,9 @@ class StatusBarBox(Gtk.HBox):
     def __init__(self, play_order, queue):
         super().__init__(spacing=6)
 
-        # Create and pack the power button as the first element
-        power_button = PowerButton("system")
-        self.pack_start(power_button, False, True, 0)
+        # Create and pack the power buttons as the first elements.
+        self.pack_start(PowerButton("system"), False, True, 0) 
+        self.pack_start(PowerButton("override"), False, True, 0)
 
         self.pack_start(play_order, False, True, 0)
 
