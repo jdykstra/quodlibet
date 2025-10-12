@@ -9,9 +9,12 @@ except ImportError:
     sa = None
 
 
-"""  Mappings from SFX names to their files in quodlibet/sounds. """
-POWER_UP = "460584__sirusamory__basic-activate.wav"
-POWER_DOWN = "460583__sirusamory__basic-deactivate.wav"
+"""  
+Mappings from SFX names to their files in quodlibet/sounds. 
+Files from freesound.org.
+"""
+POWER_UP = "827123__xkeril__startup-sound-computer.wav"
+POWER_DOWN = "827122__xkeril__end-of-task-sound.wav"
 
 
 def play_sfx(name: str):
