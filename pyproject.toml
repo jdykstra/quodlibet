@@ -31,6 +31,7 @@ pycairo = "^1.19"
 pygobject = "^3.34.0"
 camilladsp = { git = "https://github.com/HEnquist/pycamilladsp.git", tag = "v2.0.2" }
 pyserial = "^3.5"
+simpleaudio = "^1.0.4"
 
 # Optional (mainly plugins)
 musicbrainzngs = { version = "0.*", optional = true }
