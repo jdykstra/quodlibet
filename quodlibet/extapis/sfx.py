@@ -13,8 +13,8 @@ except ImportError:
 Mappings from SFX names to their files in quodlibet/sounds. 
 Files from freesound.org.
 """
-POWER_UP = "827123__xkeril__startup-sound-computer.wav"
-POWER_DOWN = "827122__xkeril__end-of-task-sound.wav"
+POWER_UP = "827123__xkeril__startup-sound-computer"
+POWER_DOWN = "827122__xkeril__end-of-task-sound"
 
 
 def play_sfx(name: str):
