@@ -370,6 +370,7 @@ class PowerButton(HighlightToggleButton):
             sound = POWER_UP if button.get_active() else POWER_DOWN
 
             if self.device_type == "system":
+                print("calling play_sfx()")
                 play_sfx(sound)
                 success = power_controller.set_system_power(state)
             else:  # refrigerator

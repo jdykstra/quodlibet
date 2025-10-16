@@ -24,6 +24,7 @@ def play_sfx(name: str):
     The sound is played through the default audio output device.
     Returns immediately; sound plays in the background.
     """
+    print("Entering play_sfx.")
     if sa is None:
         print_e("simpleaudio is required for sound playback. Install with: pip install simpleaudio")
         return
@@ -31,11 +32,14 @@ def play_sfx(name: str):
     def _play():
         try:
             with importlib.resources.path('quodlibet.sounds', f'{name}.wav') as wav_path:
+                print("_play() has started")
                 wave_obj = sa.WaveObject.from_wave_file(str(wav_path))
                 wave_obj.play()  # Play asynchronously
+                print("_play() has completed")
         except FileNotFoundError:
             print_e(f"Sound effect '{name}.wav' not found in quodlibet/sounds.")
         except Exception as e:
             print_e(f"Error playing sound effect '{name}': {e}")
 
     threading.Thread(target=_play, daemon=True).start()
+    print("Thread launched")
