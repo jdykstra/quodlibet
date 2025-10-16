@@ -33,11 +33,9 @@ class PowerController:
                     timeout=self.timeout
                 )
                 time.sleep(0.5)  # Allow time for connection to stabilize
+                self._serial.reset_input_buffer()
             except serial.SerialException as e:
                 raise ConnectionError(f"Failed to connect to power controller on {self.port}: {e}")
-
-        #  Discard any junk in the input buffer.
-        self._serial.reset_input_buffer()
         
     def _disconnect(self):
         """Close serial connection."""
