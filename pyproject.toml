@@ -18,6 +18,11 @@ packages = [
     { include = "quodlibet", from = "." }
 ]
 
+# Include all files in the sounds directory in the package
+include = [
+    "quodlibet/sounds/**"
+]
+
 [tool.poetry.scripts]
 # Convenience: `poetry run quodlibet` just runs the app (with no CLI args)
 quodlibet = "quodlibet.main:main"
@@ -31,7 +36,6 @@ pycairo = "^1.19"
 pygobject = "^3.34.0"
 camilladsp = { git = "https://github.com/HEnquist/pycamilladsp.git", tag = "v2.0.2" }
 pyserial = "^3.5"
-simpleaudio = "^1.0.4"
 
 # Optional (mainly plugins)
 musicbrainzngs = { version = "0.*", optional = true }
