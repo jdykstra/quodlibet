@@ -20,8 +20,8 @@ except ImportError:
 Mappings from SFX names to their files in quodlibet/sounds. 
 Files from freesound.org.
 """
-POWER_UP = "827123__xkeril__startup-sound-computer"
-POWER_DOWN = "827122__xkeril__end-of-task-sound"
+POWER_UP = "startup_harp_arpeggio"
+POWER_DOWN = "shutdown_harp_arpeggio"
 
 
 def _create_sfx_pipeline(audio_sink=None):
