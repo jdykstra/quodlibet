@@ -18,7 +18,6 @@ except ImportError:
 
 """  
 Mappings from SFX names to their files in quodlibet/sounds. 
-Files from freesound.org.
 """
 POWER_UP = "startup_harp_arpeggio"
 POWER_DOWN = "shutdown_harp_arpeggio"
