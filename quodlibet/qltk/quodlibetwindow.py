@@ -792,7 +792,7 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
                 padding: 0px;
             }
         """)        
-        browser_and_songlist.pack_start(volume_slider, True, True, 0)
+        browser_and_songlist.pack_end(volume_slider, False, False, 0)
 
         main_box.pack_start(browser_and_songlist, True, True, 0)
 
