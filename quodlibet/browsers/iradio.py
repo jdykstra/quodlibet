@@ -84,7 +84,8 @@ class IRFile(RemoteFile):
             if len(title) > 1:
                 return (key == "title" and title[-1]) or title[0]
 
-        if key in ("artist", TAG_TO_SORT["artist"]) and \
+        if (key == "artist" or ("artist" in TAG_TO_SORT and \
+                key == TAG_TO_SORT["artist"])) and \
                 not base_call(key, *args) and "website" in self:
             return base_call("website", *args)
 
