@@ -84,11 +84,7 @@ class IRFile(RemoteFile):
             if len(title) > 1:
                 return (key == "title" and title[-1]) or title[0]
 
-        # JWD:  Part of hack to disable sort tags.  The upstream
-        # code (reasonably) assumes that "artist" has a sort 
-        # alternative.
-        # if key in ("artist", TAG_TO_SORT["artist"]) and \
-        if key is "artist" and \
+        if key in ("artist", TAG_TO_SORT["artist"]) and \
                 not base_call(key, *args) and "website" in self:
             return base_call("website", *args)
 
