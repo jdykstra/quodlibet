@@ -26,6 +26,8 @@ from quodlibet import app
 from quodlibet import ngettext
 from quodlibet import _
 from quodlibet.qltk.paned import ConfigRHPaned
+from quodlibet.extapis.power import power_controller
+from quodlibet.extapis.sfx import play_sfx, POWER_UP, POWER_DOWN
 
 from quodlibet.qltk.appwindow import AppWindow
 from quodlibet.update import UpdateDialog
@@ -61,6 +63,7 @@ from quodlibet.util.library import get_scan_dirs
 from quodlibet.util import connect_obj, print_d
 from quodlibet.util.library import background_filter, scan_library
 from quodlibet.util.path import uri_is_valid
+from quodlibet.util.dprint import print_e
 from quodlibet.qltk.window import PersistentWindowMixin, Window, on_first_map
 from quodlibet.qltk.songlistcolumns import CurrentColumn
 from . import add_css, gtk_version
@@ -363,11 +366,12 @@ class PowerButton(HighlightToggleButton):
             return
         self.__inhibit = True
         try:
-            from quodlibet.extapis.power import power_controller
-
             state = "on" if button.get_active() else "off"
+            sound = POWER_UP if button.get_active() else POWER_DOWN
 
             if self.device_type == "system":
+                print("calling play_sfx()")
+                play_sfx(sound)
                 success = power_controller.set_system_power(state)
             else:  # refrigerator
                 success = power_controller.set_refrigerator_override(state)

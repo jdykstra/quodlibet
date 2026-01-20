@@ -18,6 +18,11 @@ packages = [
     { include = "quodlibet", from = "." }
 ]
 
+# Include all files in the sounds directory in the package
+include = [
+    "quodlibet/sounds/**"
+]
+
 [tool.poetry.scripts]
 # Convenience: `poetry run quodlibet` just runs the app (with no CLI args)
 quodlibet = "quodlibet.main:main"
