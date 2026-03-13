@@ -7,10 +7,11 @@
 # (at your option) any later version.
 
 import operator
+from collections.abc import Iterable
 
 from gi.repository import Gtk, Pango, Gdk
 
-from quodlibet import qltk
+from quodlibet import config, qltk
 from quodlibet.qltk.views import AllTreeView, TreeViewColumnButton
 from quodlibet.qltk.songsmenu import SongsMenu
 from quodlibet.qltk.properties import SongProperties
@@ -20,6 +21,70 @@ from quodlibet.util import connect_obj
 
 from .models import PaneModel
 from .util import PaneConfig
+
+
+_RECENT_TAG_CONFIG_KEYS = {
+    "genre": "pane_recent_genre",
+    "composer": "pane_recent_composer",
+    "album": "pane_recent_album",
+}
+
+
+class RecentSelectionTracker:
+
+    def __init__(self, config_key: str):
+        self._config_key = config_key
+        self._values = self._load()
+
+    @classmethod
+    def from_tags(cls, tags: Iterable[str]):
+        for tag in tags:
+            normalized = cls._normalize_tag(tag)
+            config_key = _RECENT_TAG_CONFIG_KEYS.get(normalized)
+            if config_key:
+                return cls(config_key)
+        return None
+
+    def get(self) -> list[str]:
+        return list(self._values[:PaneModel.RECENT_LIMIT])
+
+    def record(self, keys: list[str]) -> bool:
+        updated = False
+        for key in keys:
+            if key is None:
+                continue
+            normalized = key.strip()
+            if not normalized:
+                continue
+            if normalized in self._values:
+                self._values.remove(normalized)
+            self._values.insert(0, normalized)
+            updated = True
+
+        if len(self._values) > PaneModel.RECENT_LIMIT:
+            self._values = self._values[:PaneModel.RECENT_LIMIT]
+            updated = True
+
+        if updated:
+            self._save()
+        return updated
+
+    @staticmethod
+    def _normalize_tag(tag: str) -> str:
+        return tag.lower().lstrip("~")
+
+    def _load(self) -> list[str]:
+        try:
+            raw = config.gettext("browsers", self._config_key)
+        except config.Error:
+            raw = ""
+        if not raw:
+            return []
+        values = [value for value in raw.split("\t") if value]
+        return values[:PaneModel.RECENT_LIMIT]
+
+    def _save(self) -> None:
+        config.settext("browsers", self._config_key, "\t".join(self._values))
 
 
 class Pane(AllTreeView):
@@ -68,6 +133,12 @@ class Pane(AllTreeView):
 
         model = PaneModel(self.config)
         self.set_model(model)
+
+        self._recent_tracker = RecentSelectionTracker.from_tags(self.config.tags)
+        self.__last_selected_keys: set[str] = set()
+        self.__suspend_recent = False
+        if self._recent_tracker:
+            model.set_recent_keys(self._recent_tracker.get())
 
         self.set_search_equal_func(self.__search_func, None)
         self.set_search_column(0)
@@ -181,8 +252,40 @@ class Pane(AllTreeView):
         return view.popup_menu(menu, 0, Gtk.get_current_event_time())
 
     def __selection_changed(self, *args):
+        self.__handle_recent_selection()
         if self.__next:
             self.__next.fill(self.__get_selected_songs())
+
+    def __handle_recent_selection(self):
+        model, paths = self.get_selection().get_selected_rows()
+        current_keys: set[str] = set()
+
+        if not model:
+            self.__last_selected_keys = current_keys
+            return
+
+        ordered_new_keys: list[str] = []
+        for path in paths:
+            try:
+                iter_ = model.get_iter(path)
+            except ValueError:
+                continue
+            entry = model.get_value(iter_, 0)
+            key = entry.key
+            current_keys.add(key)
+            if key in (None, ""):
+                continue
+            if key not in self.__last_selected_keys and key not in ordered_new_keys:
+                ordered_new_keys.append(key)
+
+        self.__last_selected_keys = current_keys
+
+        if (not self._recent_tracker or self.__no_fill or
+            self.__suspend_recent):
+            return
+
+        if ordered_new_keys and self._recent_tracker.record(ordered_new_keys):
+            self.get_model().set_recent_keys(self._recent_tracker.get())
 
     def add(self, songs):
         self.get_model().add_songs(songs)
@@ -233,6 +336,7 @@ class Pane(AllTreeView):
 
         self.set_selected(selected, jump=True)
         self.uninhibit()
+        self.__last_selected_keys = set(self.get_selected())
 
         if self.__next and self.__no_fill == 0:
             self.__next.fill(self.__get_selected_songs())
@@ -269,15 +373,19 @@ class Pane(AllTreeView):
 
         # If the selection is the same, change nothing
         if values != self.get_selected():
+            self.__suspend_recent = True
             self.inhibit()
-            self.get_selection().unselect_all()
+            try:
+                self.get_selection().unselect_all()
 
-            def select_func(row):
-                entry = row[0]
-                return entry.key in values
+                def select_func(row):
+                    entry = row[0]
+                    return entry.key in values
 
-            self.select_by_func(select_func, scroll=jump)
-            self.uninhibit()
+                self.select_by_func(select_func, scroll=jump)
+            finally:
+                self.uninhibit()
+                self.__suspend_recent = False
 
             self.get_selection().emit("changed")
 

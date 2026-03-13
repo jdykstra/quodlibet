@@ -73,6 +73,31 @@ class SongsEntry(BaseEntry):
         return f"<{type(self).__name__} key={self.key!r} songs={len(self.songs):d}>"
 
 
+class RecentEntry(SongsEntry):
+
+    def __init__(self, entry: SongsEntry):
+        super().__init__(entry.key, entry.sort, songs=entry.songs)
+        self._entry = entry
+        self.songs = entry.songs
+        self.sort = entry.sort
+
+    def get_count_markup(self, config: PaneConfig) -> str:
+        return self._entry.get_count_markup(config)
+
+    def get_markup(self, config: PaneConfig) -> str:
+        base_markup = self._entry.get_markup(config)
+        return f"<i>{base_markup}</i>"
+
+    def contains_text(self, text: str) -> bool:
+        return self._entry.contains_text(text)
+
+    def contains_song(self, song) -> bool:
+        return self._entry.contains_song(song)
+
+    def __repr__(self):
+        return f"<{type(self).__name__} key={self.key!r} songs={len(self.songs):d}>"
+
+
 class UnknownEntry(SongsEntry):
 
     def __init__(self, songs=None):
@@ -111,11 +136,14 @@ class AllEntry(BaseEntry):
 
 class PaneModel(ObjectStore):
 
+    RECENT_LIMIT = 3
+
     def __init__(self, pattern_config):
         super().__init__()
         self.__sort_cache = {} # text to sort text cache
         self.__key_cache = {} # song to key cache
         self.config = pattern_config
+        self._recent_keys: list[str] = []
 
     def get_format_keys(self, song):
         try:
@@ -171,7 +199,7 @@ class PaneModel(ObjectStore):
 
         to_remove = []
         for iter_, entry in self.iterrows():
-            if isinstance(entry, AllEntry):
+            if isinstance(entry, (AllEntry, RecentEntry)):
                 continue
             entry.songs -= songs
             entry.finalize()
@@ -197,6 +225,8 @@ class PaneModel(ObjectStore):
         elif to_remove and len(self) == 2:
             # Only one entry + All -> remove All
             self.remove(self.get_iter_first())
+
+        self._rebuild_recent_rows()
 
     def add_songs(self, songs):
         """Add new songs to the list, creating new rows"""
@@ -235,6 +265,7 @@ class PaneModel(ObjectStore):
             self.insert_many(0, reversed(entries))
             if len(self) > 1:
                 self.insert(0, [AllEntry()])
+            self._rebuild_recent_rows()
             return
 
         # insert all new songs
@@ -243,7 +274,8 @@ class PaneModel(ObjectStore):
         sort_key = None
 
         for iter_, entry in self.iterrows():
-            if not isinstance(entry, SongsEntry):
+            if (not isinstance(entry, SongsEntry) or
+                    isinstance(entry, RecentEntry)):
                 continue
 
             if key is None:
@@ -289,6 +321,8 @@ class PaneModel(ObjectStore):
             else:
                 self.append(row=[unknown])
 
+        self._rebuild_recent_rows()
+
     def matches(self, paths, song):
         """If the song is included in the selection defined by the paths.
 
@@ -323,13 +357,13 @@ class PaneModel(ObjectStore):
         # on the tag in question.
         if tag in tags and len(tags) == 1:
             return {r.key for r in self.itervalues()
-                    if not isinstance(r, AllEntry)}
+                    if not isinstance(r, (AllEntry, RecentEntry))}
 
         # For patterns/tied tags we have to make sure that filtering for
         # that key will return only songs that all have the specified value
         values = set()
         for entry in self.itervalues():
-            if isinstance(entry, AllEntry):
+            if isinstance(entry, (AllEntry, RecentEntry)):
                 continue
 
             if not entry.key:
@@ -356,6 +390,8 @@ class PaneModel(ObjectStore):
 
         keys = []
         for entry in self.itervalues():
+            if isinstance(entry, RecentEntry):
+                continue
             if isinstance(entry, SongsEntry):
                 for value in values:
                     if entry.all_have(tag, value):
@@ -367,3 +403,46 @@ class PaneModel(ObjectStore):
             keys.append("")
 
         return keys
+
+    def set_recent_keys(self, keys: list[str]):
+        filtered = [key for key in keys if key][:self.RECENT_LIMIT]
+        if filtered == self._recent_keys:
+            if filtered:
+                self._rebuild_recent_rows()
+            else:
+                self._remove_recent_rows()
+            return
+
+        self._recent_keys = filtered
+        self._rebuild_recent_rows()
+
+    def _find_entry_iter(self, key):
+        for iter_, entry in self.iterrows():
+            if isinstance(entry, (AllEntry, RecentEntry)):
+                continue
+            if isinstance(entry, SongsEntry) and entry.key == key:
+                return iter_
+        return None
+
+    def _remove_recent_rows(self):
+        to_remove = [iter_ for iter_, entry in self.iterrows()
+                     if isinstance(entry, RecentEntry)]
+        for iter_ in to_remove:
+            self.remove(iter_)
+
+    def _rebuild_recent_rows(self):
+        self._remove_recent_rows()
+        if not self._recent_keys or len(self) == 0:
+            return
+
+        insert_pos = 0
+        if isinstance(self[0][0], AllEntry):
+            insert_pos = 1
+
+        for key in reversed(self._recent_keys):
+            iter_ = self._find_entry_iter(key)
+            if iter_ is None:
+                continue
+            base_entry = self.get_value(iter_)
+            self.insert(insert_pos, [RecentEntry(base_entry)])
+            insert_pos += 1

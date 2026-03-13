@@ -14,7 +14,12 @@ from quodlibet import config, util
 from quodlibet.browsers.paned import PanedBrowser
 from quodlibet.browsers.paned.util import PaneConfig
 from quodlibet.browsers.paned.util import get_headers
-from quodlibet.browsers.paned.models import AllEntry, UnknownEntry, SongsEntry
+from quodlibet.browsers.paned.models import (
+    AllEntry,
+    UnknownEntry,
+    SongsEntry,
+    RecentEntry,
+)
 from quodlibet.browsers.paned.models import PaneModel
 from quodlibet.browsers.paned.prefs import PatternEditor, Preferences
 from quodlibet.browsers.paned.prefs import PreferencesButton, ColumnMode
@@ -47,12 +52,24 @@ del UNKNOWN_ARTIST["artist"]
 ALBUM = Collection()
 ALBUM.songs = SONGS
 
+_RECENT_CONFIG_KEYS = (
+    "pane_recent_genre",
+    "pane_recent_composer",
+    "pane_recent_album",
+)
+
+
+def _reset_recent_panes():
+    for key in _RECENT_CONFIG_KEYS:
+        config.settext("browsers", key, "")
+
 
 class TPanedBrowser(TestCase):
     Bar = PanedBrowser
 
     def setUp(self):
         config.init()
+        _reset_recent_panes()
         config.set("browsers", "panes", "artist")
         library = SongLibrary()
         library.librarian = SongLibrarian()
@@ -277,6 +294,7 @@ class TPane(TestCase):
 
     def setUp(self):
         config.init()
+        _reset_recent_panes()
 
         lib = SongLibrary()
         self.pane = Pane(lib, "artist")
@@ -339,11 +357,61 @@ class TPane(TestCase):
         self.pane.fill(SONGS)
         self.assertEqual(self.pane.get_selected(), keys)
 
+    def test_recent_entry_inserted_after_selection(self):
+        lib = SongLibrary()
+        pane = Pane(lib, "genre")
+        self.addCleanup(pane.destroy)
+        pane.fill(SONGS)
+
+        model = pane.get_model()
+        rock_index = next(
+            i for i, row in enumerate(model)
+            if isinstance(row[0], SongsEntry) and row[0].key == "Rock"
+        )
+
+        selection = pane.get_selection()
+        selection.unselect_all()
+        selection.select_path(Gtk.TreePath((rock_index,)))
+        run_gtk_loop()
+
+        updated_model = pane.get_model()
+        self.assertIsInstance(updated_model[1][0], RecentEntry)
+        self.assertEqual(updated_model[1][0].key, "Rock")
+
+        occurrences = [
+            i for i, row in enumerate(updated_model)
+            if getattr(row[0], "key", None) == "Rock"
+        ]
+        self.assertGreaterEqual(len(occurrences), 2)
+
+    def test_recent_entries_loaded_from_config(self):
+        config.settext("browsers", "pane_recent_genre", "Rock\tJ-Pop")
+        lib = SongLibrary()
+        pane = Pane(lib, "genre")
+        self.addCleanup(pane.destroy)
+        pane.fill(SONGS)
+
+        model = pane.get_model()
+        top_rows = [row[0] for row in model[1:3]]
+        self.assertTrue(all(isinstance(row, RecentEntry) for row in top_rows))
+        self.assertEqual([row.key for row in top_rows], ["Rock", "J-Pop"])
+        for row in top_rows:
+            markup = row.get_markup(pane.config)
+            self.assertTrue(markup.startswith("<i>"))
+            self.assertTrue(markup.endswith("</i>"))
+
+        occurrences = [
+            i for i, row in enumerate(model)
+            if getattr(row[0], "key", None) == "Rock"
+        ]
+        self.assertGreaterEqual(len(occurrences), 2)
+
 
 class TMultiPane(TestCase):
 
     def setUp(self):
         config.init()
+        _reset_recent_panes()
 
         lib = SongLibrary()
         self.p2 = Pane(lib, "artist", self)

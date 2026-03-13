@@ -134,6 +134,11 @@ INITIAL: dict[str, dict[str, str]] = {
         # selected pane values
         "pane_selection": "",
 
+        # recently selected pane values for quick access
+        "pane_recent_genre": "",
+        "pane_recent_composer": "",
+        "pane_recent_album": "",
+
         # equal pane width in paned browser
         "equal_pane_width": "true",
 
