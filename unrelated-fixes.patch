@@ -1,0 +1,125 @@
+# Unrelated fixes extracted from the current worktree.
+#
+# 1. Make the optional DSP UI degrade cleanly when the external
+#    camilladsp dependency is not installed, instead of breaking
+#    PanedBrowser registration/import.
+# 2. Avoid the GTK warning in SearchBarBox programmatic text updates by
+#    clearing any active combo-row selection and updating the entry buffer
+#    directly.
+# 3. Reset TaskController.default_instance in the fake-app test helpers so
+#    repeated GTK test setup/teardown does not retain a stale parent.
+
+diff --git a/quodlibet/browsers/dspconfig.py b/quodlibet/browsers/dspconfig.py
+index 8b68be944..fea0a157e 100644
+--- a/quodlibet/browsers/dspconfig.py
++++ b/quodlibet/browsers/dspconfig.py
+@@ -8,7 +8,15 @@ from gi.repository import GObject
+ from quodlibet import qltk
+ from quodlibet.qltk.menubutton import MenuButton
+ 
+-from ..extapis.dsp import DspController, dsp_controller
++try:
++    from ..extapis.dsp import DspController, dsp_controller
++except ModuleNotFoundError as error:
++    DspController = None
++    dsp_controller = None
++    _DSP_IMPORT_ERROR = error
++else:
++    _DSP_IMPORT_ERROR = None
++
+ import quodlibet.qltk.touch as tt
+ 
+ 
+@@ -43,6 +51,11 @@ class ConfigChooser(Gtk.VBox):
+         """
+         Create rectangle buttons for each configuration file, colored red if unselected and green if selected.
+         """
++        if dsp_controller is None:
++            error_label = Gtk.Label(label=f"Error: {_DSP_IMPORT_ERROR}")
++            self.pack_start(error_label, False, False, 0)
++            return
++
+         try:
+             dsp_controller.connect()
+             self.config_dir, config_files = dsp_controller.get_configs()
+@@ -119,6 +132,12 @@ class DspStatusPane(Gtk.VBox):
+         self.start_auto_refresh()  # Start auto-refresh immediately
+ 
+     def update_status(self):
++        if dsp_controller is None:
++            self.status_tile.set_label("Unavailable")
++            self.status_tile.set_color(tt.TouchTile.RED)
++            self.status_tile.queue_draw()
++            return
++
+         try:
+             dsp_controller.connect()
+             state = dsp_controller.general.state()
+@@ -204,4 +223,8 @@ class DspWindowOpener(Gtk.HBox):
+             window.show()
+         button.connect("clicked", on_button_clicked)
+ 
++        if dsp_controller is None:
++            button.set_sensitive(False)
++            button.set_tooltip_text(f"DSP unavailable: {_DSP_IMPORT_ERROR}")
++
+         self.pack_start(button, True, True, 0)
+
+diff --git a/quodlibet/qltk/searchbar.py b/quodlibet/qltk/searchbar.py
+index 5f9902a5b..039bbda7c 100644
+--- a/quodlibet/qltk/searchbar.py
++++ b/quodlibet/qltk/searchbar.py
+@@ -100,12 +100,18 @@ class SearchBarBox(Gtk.Box):
+     def set_text(self, text):
+         """Set the text without firing any signals"""
+ 
++        if text == self._entry.get_text():
++            self._update_query_from(text)
++            return
++
+         self.__deferred_changed.abort()
+         self._update_query_from(text)
+ 
+         # deactivate all signals and change the entry text
+         self.__inhibit()
+-        self._entry.set_text(text)
++        if self.__combo.get_active() != -1:
++            self.__combo.set_active(-1)
++        self._entry.get_buffer().set_text(text, len(text))
+         self.__uninhibit()
+ 
+     def _update_query_from(self, text):
+
+diff --git a/tests/__init__.py b/tests/__init__.py
+index f5791f5ee..b75719751 100644
+--- a/tests/__init__.py
++++ b/tests/__init__.py
+@@ -117,10 +117,12 @@ def init_fake_app() -> None:
+     from quodlibet.player.nullbe import NullPlayer
+     from quodlibet.library import SongFileLibrary
+     from quodlibet.library.librarians import SongLibrarian
++    from quodlibet.qltk.notif import TaskController
+     from quodlibet.qltk.quodlibetwindow import QuodLibetWindow, PlayerOptions
+     from quodlibet.util.cover import CoverManager
+ 
+     browsers.init()
++    TaskController.default_instance = TaskController()
+     app.name = "Quod Libet"
+     app.id = "io.github.quodlibet.QuodLibet"
+     app.player = NullPlayer()
+@@ -133,12 +135,16 @@ def init_fake_app() -> None:
+ 
+ def destroy_fake_app() -> None:
+     from quodlibet import app
++    from quodlibet.qltk.notif import TaskController
+ 
+     app.window.destroy()
+     app.library.destroy()
+     app.library.librarian.destroy()
+     app.player.destroy()
+ 
++    TaskController.default_instance.parent = None
++    TaskController.default_instance = TaskController()
++
+     app.window = app.library = app.player = app.name = app.id = None
+     app.cover_manager = None

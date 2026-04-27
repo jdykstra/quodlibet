@@ -139,7 +139,8 @@ class SequentialBrowser(Browser):
         header = Gtk.Box(spacing=6)
         button = Gtk.Button()
         button.set_image(Gtk.Image.new_from_icon_name(
-            "go-previous-symbolic", Gtk.IconSize.BUTTON))
+            "go-previous-symbolic", Gtk.IconSize.DND))
+        button.set_size_request(52, 52)
         button.set_relief(Gtk.ReliefStyle.NONE)
         button.set_tooltip_text(_("Back"))
         button.connect("clicked", self.__go_back)
