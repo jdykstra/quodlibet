@@ -136,12 +136,14 @@ class SequentialBrowser(Browser):
         self._search = search
         self.pack_start(Align(search, left=6, right=6), False, True, 0)
 
-        header = Gtk.Box(spacing=6)
+        header = Gtk.Box(spacing=3, orientation=Gtk.Orientation.VERTICAL)
         breadcrumb_box = Gtk.Box(spacing=6, homogeneous=False)
         self._breadcrumb_box = breadcrumb_box
         self._breadcrumb_buttons = {}
+        self._breadcrumb_slots = {}
         for index, tag in enumerate(PATH_LEVELS):
-            button = Gtk.Button(label="")
+            slot = Gtk.Box()
+            button = Gtk.Button(label=tag)
             button.set_size_request(52, 52)
             button.set_relief(Gtk.ReliefStyle.NONE)
             child = button.get_child()
@@ -150,9 +152,17 @@ class SequentialBrowser(Browser):
                 child.set_single_line_mode(True)
                 child.set_max_width_chars(24)
             button.connect("clicked", self.__breadcrumb_clicked, index)
-            breadcrumb_box.pack_start(button, True, True, 0)
+            slot.pack_start(button, True, True, 0)
+            breadcrumb_box.pack_start(slot, True, True, 0)
             self._breadcrumb_buttons[tag] = button
-        header.pack_end(breadcrumb_box, True, True, 0)
+            self._breadcrumb_slots[tag] = slot
+        header.pack_start(breadcrumb_box, True, True, 0)
+
+        breadcrumb_label = Gtk.Label(xalign=0.0)
+        breadcrumb_label.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
+        breadcrumb_label.get_style_context().add_class("dim-label")
+        self._breadcrumb_label = breadcrumb_label
+        header.pack_start(breadcrumb_label, False, True, 0)
         self.pack_start(Align(header, left=6, right=6), False, True, 0)
 
         self._view = DrilldownView()
@@ -250,13 +260,18 @@ class SequentialBrowser(Browser):
     def __update_header(self) -> None:
         current_level = LEVELS[self._level_index]
         self._view.set_title("")
+        values = []
         for index, tag in enumerate(PATH_LEVELS):
             value = self._path_values[tag]
-            label = self.__display_value(value) if value is not None else ""
+            if value is not None:
+                values.append(self.__display_value(value))
             button = self._breadcrumb_buttons[tag]
-            button.set_label(label)
-            button.set_tooltip_text(label)
-            button.set_sensitive(index < self._level_index)
+            button.set_label(tag)
+            button.set_tooltip_text(tag)
+            is_visible = index < self._level_index
+            button.set_visible(is_visible)
+            button.set_sensitive(is_visible)
+        self._breadcrumb_label.set_text(" / ".join(values))
 
     def __display_value(self, value: str) -> str:
         if value == UNKNOWN_VALUE:
