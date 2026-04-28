@@ -15,6 +15,7 @@ from quodlibet.qltk import is_accel
 from quodlibet.qltk.completion import LibraryTagCompletion
 from quodlibet.qltk.searchbar import SearchBarBox
 from quodlibet.qltk.songlist import SongList
+from quodlibet.qltk.touch import CompactColorTouchButton
 from quodlibet.qltk.views import AllTreeView, TreeViewColumnButton
 from quodlibet.qltk.x import Align, ScrolledWindow
 from quodlibet.util.library import background_filter
@@ -218,17 +219,17 @@ class SequentialBrowser(Browser):
         self._breadcrumb_buttons = {}
         for index, tag in enumerate(PATH_LEVELS):
             slot = Gtk.Box()
-            button = Gtk.Button(label=tag)
-            button.set_size_request(52, 52)
-            button.set_relief(Gtk.ReliefStyle.NONE)
+            button = CompactColorTouchButton(label=tag,
+                                             color=CompactColorTouchButton.BLUE)
+            button.set_size_request(200, 52)
             child = button.get_child()
             if isinstance(child, Gtk.Label):
                 child.set_ellipsize(Pango.EllipsizeMode.END)
                 child.set_single_line_mode(True)
                 child.set_max_width_chars(24)
             button.connect("clicked", self.__breadcrumb_clicked, index)
-            slot.pack_start(button, True, True, 0)
-            breadcrumb_box.pack_start(slot, True, True, 0)
+            slot.pack_start(button, False, False, 0)
+            breadcrumb_box.pack_start(slot, False, False, 0)
             self._breadcrumb_buttons[tag] = button
         header.pack_start(breadcrumb_box, True, True, 0)
 

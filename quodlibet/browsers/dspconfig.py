@@ -22,8 +22,8 @@ import quodlibet.qltk.touch as tt
 
 class ConfigChooser(Gtk.VBox):
 
-    SELECTED_COLOR = tt.TouchTile.GREEN
-    UNSELECTED_COLOR = tt.TouchTile.BLUE
+    SELECTED_COLOR = tt.ColorTouchButton.GREEN
+    UNSELECTED_COLOR = tt.ColorTouchButton.BLUE
 
     def __init__(self, browser):
         super().__init__(spacing=10)
@@ -67,7 +67,7 @@ class ConfigChooser(Gtk.VBox):
             for f in self.config_files:
                 config = dsp_controller.config.read_and_parse_file(os.path.join(self.config_dir, f))
                 self._configs[f] = config
-                button = tt.TouchTile(label=config.get("title", f), color=self.UNSELECTED_COLOR)
+                button = tt.ColorTouchButton(label=config.get("title", f), color=self.UNSELECTED_COLOR)
                 if f == self._current_config:
                     button.set_color(self.SELECTED_COLOR)
                     self._selected_button = button
@@ -107,25 +107,25 @@ class ConfigChooser(Gtk.VBox):
 
 class DspStatusPane(Gtk.VBox):
     """
-    Pane to display the current DSP status as a TouchTile.
+    Pane to display the current DSP status as a colored touch button.
     """
     STATE_COLORS = {
-        "running": tt.TouchTile.GREEN,
-        "starting": tt.TouchTile.YELLOW,
-        "stalled": tt.TouchTile.RED,
-        "paused": tt.TouchTile.BLUE,
-        "inactive": tt.TouchTile.ORANGE,
+        "running": tt.ColorTouchButton.GREEN,
+        "starting": tt.ColorTouchButton.YELLOW,
+        "stalled": tt.ColorTouchButton.RED,
+        "paused": tt.ColorTouchButton.BLUE,
+        "inactive": tt.ColorTouchButton.ORANGE,
     }
 
     def __init__(self):
         super().__init__(spacing=10)
         tt.ensure_touch_css_loaded()
-        # Add a label above the TouchTile
+        # Add a label above the status button
         label = Gtk.Label(label="Status")
         label.set_justify(Gtk.Justification.CENTER)
         label.set_alignment(0.5, 0.5)
         self.pack_start(label, False, False, 0)
-        self.status_tile = tt.TouchTile(label="...", color=tt.TouchTile.BLUE)
+        self.status_tile = tt.ColorTouchButton(label="...", color=tt.ColorTouchButton.BLUE)
         self.pack_start(self.status_tile, False, False, 0)
         self._refresh_id = None
         self.update_status()
@@ -134,7 +134,7 @@ class DspStatusPane(Gtk.VBox):
     def update_status(self):
         if dsp_controller is None:
             self.status_tile.set_label("Unavailable")
-            self.status_tile.set_color(tt.TouchTile.RED)
+            self.status_tile.set_color(tt.ColorTouchButton.RED)
             self.status_tile.queue_draw()
             return
 
@@ -142,7 +142,7 @@ class DspStatusPane(Gtk.VBox):
             dsp_controller.connect()
             state = dsp_controller.general.state()
             state_str = getattr(state, 'name', str(state)).lower()  # Ensure lowercase
-            color = self.STATE_COLORS.get(state_str, tt.TouchTile.BLUE)
+            color = self.STATE_COLORS.get(state_str, tt.ColorTouchButton.BLUE)
             self.status_tile.set_label(state_str.title())  # Display with proper case
             
             # Force the color change and redraw
@@ -156,7 +156,7 @@ class DspStatusPane(Gtk.VBox):
             print(f"Status updated: {state_str} -> {color} (was {old_color})")  # Debug output
         except Exception as e:
             self.status_tile.set_label("Error")
-            self.status_tile.set_color(tt.TouchTile.RED)
+            self.status_tile.set_color(tt.ColorTouchButton.RED)
             self.status_tile.queue_draw()
             print(f"Status update error: {e}")  # Debug output
         finally:
