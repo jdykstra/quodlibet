@@ -3,7 +3,7 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 
 from quodlibet import config
 from quodlibet.browsers.tracks import TrackList
@@ -133,6 +133,45 @@ class TSongList(TestCase):
 
     def test_single_click_activate_defaults_off(self):
         self.assertFalse(self.songlist._single_click_activate)
+
+    def test_single_click_activate_emits_row_activated(self):
+        songlist = SongList(self.lib, single_click_activate=True)
+        songlist.set_column_headers(["artist"])
+        song = AudioFile({"~filename": "/dev/null", "artist": "A"})
+        songlist.set_songs([song])
+
+        window = Gtk.Window()
+        window.add(songlist)
+        window.show_all()
+        run_gtk_loop()
+
+        activated = []
+        songlist.connect("row-activated", lambda *args: activated.append(args[1]))
+
+        path = Gtk.TreePath.new_first()
+        column = songlist.get_columns()[0]
+        rect = songlist.get_cell_area(path, column)
+        x = rect.x + 5
+        y = rect.y + max(1, rect.height // 2)
+
+        press = Gdk.Event.new(Gdk.EventType.BUTTON_PRESS)
+        press.button = 1
+        press.window = songlist.get_bin_window()
+        press.x = x
+        press.y = y
+        songlist.emit("button-press-event", press)
+
+        release = Gdk.Event.new(Gdk.EventType.BUTTON_RELEASE)
+        release.button = 1
+        release.window = songlist.get_bin_window()
+        release.x = x
+        release.y = y
+        songlist.emit("button-release-event", release)
+        run_gtk_loop()
+
+        self.assertEqual(activated, [path])
+
+        window.destroy()
 
     def test_set_songs(self):
         self.songlist.set_songs([], sorted=True)

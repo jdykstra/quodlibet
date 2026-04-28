@@ -1339,6 +1339,8 @@ class QuodLibetWindow(Window, PersistentWindowMixin, AppWindow):
             self.songlist.enable_drop(False)
         else:
             self.songlist.disable_drop()
+        self.songlist.set_single_click_activate(
+            Browser.songlist_single_click_activate)
         if self.browser.accelerators:
             self.add_accel_group(self.browser.accelerators)
         self.set_sortability()

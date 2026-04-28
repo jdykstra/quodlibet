@@ -408,7 +408,8 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
                  sortable: bool = True, single_click_activate: bool = False):
         super().__init__()
         self.sortable = sortable
-        self._single_click_activate = single_click_activate
+        self._single_click_activate = False
+        self._single_click_activation_candidate = None
         self._register_instance(SongList)
         self.set_model(model_cls())
         self.info = SongSelectionInfo(self)
@@ -436,7 +437,7 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
             connect_destroy(player, "error", lambda *x: self.__redraw_current())
 
         self.connect("button-press-event", self.__button_press, library)
-        self.connect("button-release-event", self.__button_release)
+        self.connect_after("button-release-event", self.__button_release)
         self.connect("key-press-event", self.__key_press, library, player)
 
         self.setup_drop(library)
@@ -445,6 +446,11 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
         self.set_search_equal_func(self.__search_func, None)
 
         self.connect("destroy", self.__destroy)
+        self.set_single_click_activate(single_click_activate)
+
+    def set_single_click_activate(self, enabled: bool):
+        self._single_click_activate = enabled
+        self._single_click_activation_candidate = None
 
     @property
     def sortable(self) -> bool:
@@ -631,6 +637,7 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
         browser.filter_on(songs, header)
 
     def __button_press(self, view, event, librarian):
+        self._single_click_activation_candidate = None
         if event.button != Gdk.BUTTON_PRIMARY:
             return
         x, y = map(int, [event.x, event.y])
@@ -640,6 +647,12 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
             return True
         if event.window != self.get_bin_window():
             return False
+        if self._single_click_activate:
+            mod_active = event.get_state() & (
+                qltk.get_primary_accel_mod() | Gdk.ModifierType.SHIFT_MASK)
+            if not mod_active and col.header_name != "~rating":
+                self._single_click_activation_candidate = (
+                    path.copy(), int(event.x), int(event.y))
         if col.header_name == "~rating":
             if not config.getboolean("browsers", "rating_click"):
                 return
@@ -660,22 +673,31 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
             self.__set_rating(rating, [song], librarian)
 
     def __button_release(self, view, event):
-        if not self._single_click_activate:
+        candidate = self._single_click_activation_candidate
+        self._single_click_activation_candidate = None
+        if not self._single_click_activate or candidate is None:
             return False
         if event.button != Gdk.BUTTON_PRIMARY or event.window != self.get_bin_window():
             return False
 
-        x, y = map(int, [event.x, event.y])
+        press_path, press_x, press_y = candidate
+        if self.drag_check_threshold(press_x, press_y, int(event.x), int(event.y)):
+            return False
+
         try:
-            path, col, cellx, celly = view.get_path_at_pos(x, y)
+            path, col, cellx, celly = view.get_path_at_pos(int(event.x), int(event.y))
         except TypeError:
             return False
 
-        if getattr(col, "header_name", None) == "~rating":
+        if path.compare(press_path) != 0 or col.header_name == "~rating":
             return False
 
-        self.set_cursor(path, col, False)
-        self.row_activated(path, col)
+        mod_active = event.get_state() & (
+            qltk.get_primary_accel_mod() | Gdk.ModifierType.SHIFT_MASK)
+        if mod_active:
+            return False
+
+        self.emit("row-activated", path, col)
         return False
 
     def __set_rating(self, value, songs, librarian):
