@@ -9,6 +9,7 @@ from quodlibet import app
 from quodlibet import config
 from quodlibet import qltk
 from quodlibet.browsers import Browser
+from quodlibet.browsers.dspconfig import DspWindowOpener
 from quodlibet.formats import PEOPLE
 from quodlibet.qltk import is_accel
 from quodlibet.qltk.completion import LibraryTagCompletion
@@ -22,6 +23,9 @@ from quodlibet.util.library import background_filter
 LEVELS = ("genre", "artist", "album", "song")
 PATH_LEVELS = LEVELS[:-1]
 UNKNOWN_VALUE = "__sequential_unknown__"
+MAX_LABEL_CHARS = 30
+GRID_COLUMN_WIDTH = 260
+EXTRA_ROW_SPACING = 10
 
 
 @dataclass(order=True)
@@ -36,9 +40,14 @@ class DrilldownRow:
         unknown_sort = "\uffff" if key == UNKNOWN_VALUE else ""
         return cls(f"{unknown_sort}{label.casefold()}", key, label, count)
 
-    def get_markup(self) -> str:
-        text = GLib.markup_escape_text(self.label)
+    def get_markup(self, max_chars: int = MAX_LABEL_CHARS) -> str:
+        text = GLib.markup_escape_text(self.__display_label(max_chars))
         return "%s <span alpha='60%%'>(%d)</span>" % (text, self.count)
+
+    def __display_label(self, max_chars: int) -> str:
+        if len(self.label) <= max_chars:
+            return self.label
+        return self.label[:max_chars - 1] + "…"
 
     def contains_text(self, text: str) -> bool:
         return text.casefold() in self.label.casefold()
@@ -51,52 +60,130 @@ class DrilldownView(AllTreeView):
         self.set_fixed_height_mode(True)
         self.get_selection().set_mode(Gtk.SelectionMode.SINGLE)
 
-        column = TreeViewColumnButton(title="")
-        column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
-        column.set_fixed_width(60)
-
-        renderer = Gtk.CellRendererText()
-        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
-        column.pack_start(renderer, True)
-
-        def text_cdf(column, cell, model, iter_, data):
-            row = model.get_value(iter_, 0)
-            cell.set_property("markup", row.get_markup())
-
-        column.set_cell_data_func(renderer, text_cdf)
-        self.append_column(column)
-        self.set_model(Gtk.ListStore(object))
+        self._rows: list[DrilldownRow] = []
+        self._selected_key: str | None = None
+        self._visible_columns = 1
+        self._tree_columns: list[Gtk.TreeViewColumn] = []
+        self.__rebuild_columns()
         self.set_search_equal_func(self.__search_func, None)
         self.set_search_column(0)
         self.set_enable_search(True)
+        self.connect("size-allocate", self.__size_allocate)
 
     def __search_func(self, model, column, key, iter_, data):
-        row = model.get_value(iter_, 0)
-        return not row.contains_text(key)
+        for column_index in range(self._visible_columns):
+            row = model.get_value(iter_, column_index)
+            if row is not None and row.contains_text(key):
+                return False
+        return True
 
-    def set_rows(self, rows: list[DrilldownRow], selected_key: str | None) -> None:
+    def __size_allocate(self, widget, allocation):
+        column_count = self.__column_count_for_width(allocation.width)
+        if column_count == self._visible_columns:
+            return
+        self._visible_columns = column_count
+        self.__rebuild_columns()
+        self.__populate_model()
+
+    def __column_count_for_width(self, width: int) -> int:
+        if width <= 0 or not self._rows:
+            return 1
+        return max(1, min(len(self._rows), width // GRID_COLUMN_WIDTH or 1))
+
+    def __rebuild_columns(self) -> None:
+        for column in self.get_columns():
+            self.remove_column(column)
+
+        self._tree_columns = []
+        for column_index in range(self._visible_columns):
+            column = TreeViewColumnButton(title="")
+            column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+            column.set_fixed_width(GRID_COLUMN_WIDTH)
+            column.set_expand(True)
+
+            renderer = Gtk.CellRendererText()
+            renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
+            renderer.set_property("width-chars", MAX_LABEL_CHARS)
+            renderer.set_property("ypad", EXTRA_ROW_SPACING // 2)
+            column.pack_start(renderer, True)
+            column.set_cell_data_func(renderer, self.__text_cell_data, column_index)
+            self.append_column(column)
+            self._tree_columns.append(column)
+
+        self.set_model(Gtk.ListStore(*([object] * self._visible_columns)))
+
+    def __text_cell_data(self, column, cell, model, iter_, column_index):
+        row = model.get_value(iter_, column_index)
+        cell.set_property("visible", row is not None)
+        if row is None:
+            cell.set_property("markup", "")
+            cell.markup = ""
+            return
+        markup = row.get_markup()
+        cell.set_property("markup", markup)
+        cell.markup = markup
+
+    def __populate_model(self) -> None:
         model = self.get_model()
         model.clear()
-        selected_path = None
-        for index, row in enumerate(rows):
-            model.append([row])
-            if row.key == selected_key:
-                selected_path = Gtk.TreePath((index,))
+
+        if not self._rows:
+            self.get_selection().unselect_all()
+            return
+
+        rows_per_column = (len(self._rows) + self._visible_columns - 1) // self._visible_columns
+        grid = [[None for _ in range(self._visible_columns)] for _ in range(rows_per_column)]
+        selected_position = None
+        for index, row in enumerate(self._rows):
+            row_index = index % rows_per_column
+            column_index = index // rows_per_column
+            grid[row_index][column_index] = row
+            if row.key == self._selected_key:
+                selected_position = (row_index, column_index)
+
+        for grid_row in grid:
+            model.append(grid_row)
 
         self.get_selection().unselect_all()
-        if selected_path is not None:
-            self.set_cursor(selected_path)
-        elif rows:
-            self.set_cursor(Gtk.TreePath((0,)))
+        if selected_position is not None:
+            path = Gtk.TreePath((selected_position[0],))
+            column = self._tree_columns[selected_position[1]]
+            self.set_cursor(path, column, False)
+        elif self._rows:
+            self.set_cursor(Gtk.TreePath((0,)), self._tree_columns[0], False)
+
+    def set_rows(self, rows: list[DrilldownRow], selected_key: str | None) -> None:
+        self._rows = list(rows)
+        self._selected_key = selected_key
+        self._visible_columns = self.__column_count_for_width(self.get_allocated_width())
+        self.__rebuild_columns()
+        self.__populate_model()
 
     def get_selected_row(self) -> DrilldownRow | None:
-        model, iter_ = self.get_selection().get_selected()
-        if iter_ is None:
+        path, column = self.get_cursor()
+        if path is None:
             return None
-        return model.get_value(iter_, 0)
+        column_index = self._tree_columns.index(column) if column in self._tree_columns else 0
+        iter_ = self.get_model().get_iter(path)
+        return self.get_model().get_value(iter_, column_index)
+
+    def set_cursor_for_key(self, key: str) -> None:
+        model = self.get_model()
+        for row_index, grid_row in enumerate(model):
+            for column_index in range(self._visible_columns):
+                row = grid_row[column_index]
+                if row is not None and row.key == key:
+                    self.set_cursor(Gtk.TreePath((row_index,)),
+                                    self._tree_columns[column_index], False)
+                    return
+
+    def activate_cursor(self) -> None:
+        path, column = self.get_cursor()
+        if path is not None and column is not None:
+            self.row_activated(path, column)
 
     def get_row_labels(self) -> list[str]:
-        return [row[0].label for row in self.get_model()]
+        return [row.label for row in self._rows]
 
 
 class SequentialBrowser(Browser):
@@ -122,6 +209,8 @@ class SequentialBrowser(Browser):
         search.connect("focus-out", self.__focus)
         search.connect("key-press-event", self.__search_key_pressed)
         self._search = search
+        dsp_button = DspWindowOpener(self)
+        search.pack_start(dsp_button, False, True, 0)
         self.pack_start(Align(search, left=6, right=6), False, True, 0)
 
         header = Gtk.Box(spacing=3, orientation=Gtk.Orientation.VERTICAL)

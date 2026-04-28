@@ -8,6 +8,7 @@ from quodlibet import config
 from quodlibet.browsers.sequential.main import SequentialBrowser, UNKNOWN_VALUE
 from quodlibet.formats import AudioFile
 from quodlibet.library import SongLibrary, SongLibrarian
+from quodlibet.browsers.sequential.main import DrilldownRow
 
 
 SONGS = [
@@ -100,8 +101,8 @@ class TSequentialBrowser(TestCase):
     def test_row_activation_advances(self):
         with visible(self.container):
             self.bar.activate()
-            self.bar._view.set_cursor(Gtk.TreePath((1,)))
-            self.bar._view.row_activated(Gtk.TreePath((1,)), self.bar._view.get_column(0))
+            self.bar._view.set_cursor_for_key("Rock")
+            self.bar._view.activate_cursor()
             run_gtk_loop()
             self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "genre")
             self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "artist")
@@ -181,3 +182,31 @@ class TSequentialBrowser(TestCase):
         self.bar.restore()
         self.bar.activate()
         self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock / Artist A")
+
+    def test_multi_column_layout_fills_down_first(self):
+        rows = [
+            DrilldownRow.create(f"genre-{index}", f"Genre {index}", 1)
+            for index in range(6)
+        ]
+        self.bar._view._visible_columns = 2
+        self.bar._view._rows = rows
+        self.bar._view._selected_key = None
+        self.bar._view._DrilldownView__rebuild_columns()
+        self.bar._view._DrilldownView__populate_model()
+
+        model = self.bar._view.get_model()
+        self.assertEqual(len(self.bar._view.get_columns()), 2)
+        self.assertEqual(model[0][0].label, "Genre 0")
+        self.assertEqual(model[1][0].label, "Genre 1")
+        self.assertEqual(model[2][0].label, "Genre 2")
+        self.assertEqual(model[0][1].label, "Genre 3")
+        self.assertEqual(model[1][1].label, "Genre 4")
+        self.assertEqual(model[2][1].label, "Genre 5")
+
+    def test_row_markup_truncates_to_thirty_characters(self):
+        row = DrilldownRow.create(
+            "album-1",
+            "12345678901234567890123456789012345",
+            1,
+        )
+        self.assertIn("12345678901234567890123456789…", row.get_markup())
