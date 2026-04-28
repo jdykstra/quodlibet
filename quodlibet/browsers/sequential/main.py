@@ -57,7 +57,7 @@ class DrilldownView(AllTreeView):
         self.set_fixed_height_mode(True)
         self.get_selection().set_mode(Gtk.SelectionMode.SINGLE)
 
-        column = TreeViewColumnButton(title=LEVEL_TITLES[LEVELS[0]])
+        column = TreeViewColumnButton(title="")
         column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         column.set_fixed_width(60)
 
@@ -137,26 +137,16 @@ class SequentialBrowser(Browser):
         self.pack_start(Align(search, left=6, right=6), False, True, 0)
 
         header = Gtk.Box(spacing=6)
-        button = Gtk.Button()
-        button.set_image(Gtk.Image.new_from_icon_name(
-            "go-previous-symbolic", Gtk.IconSize.DND))
-        button.set_size_request(52, 52)
-        button.set_relief(Gtk.ReliefStyle.NONE)
-        button.set_tooltip_text(_("Back"))
-        button.connect("clicked", self.__go_back)
-        header.pack_start(button, False, False, 0)
-        self._back_button = button
-
-        title = Gtk.Label(xalign=0.0)
-        title.set_ellipsize(Pango.EllipsizeMode.END)
-        title.get_style_context().add_class("dim-label")
-        header.pack_start(title, True, True, 0)
-        self._title_label = title
-
-        breadcrumb = Gtk.Label(xalign=1.0)
-        breadcrumb.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
-        header.pack_end(breadcrumb, False, False, 0)
-        self._breadcrumb_label = breadcrumb
+        breadcrumb_box = Gtk.Box(spacing=6, homogeneous=True)
+        self._breadcrumb_buttons = {}
+        for index, tag in enumerate(PATH_LEVELS):
+            button = Gtk.Button(label="")
+            button.set_size_request(52, 52)
+            button.set_relief(Gtk.ReliefStyle.NONE)
+            button.connect("clicked", self.__breadcrumb_clicked, index)
+            breadcrumb_box.pack_start(button, True, True, 0)
+            self._breadcrumb_buttons[tag] = button
+        header.pack_end(breadcrumb_box, True, True, 0)
         self.pack_start(Align(header, left=6, right=6), False, True, 0)
 
         self._view = DrilldownView()
@@ -235,12 +225,12 @@ class SequentialBrowser(Browser):
         self._level_index = min(self._level_index + 1, len(LEVELS) - 1)
         self.activate()
 
-    def __go_back(self, *args):
-        if self._level_index == 0:
+    def __breadcrumb_clicked(self, button, level_index):
+        if level_index >= self._level_index:
             return
-        self._level_index -= 1
-        self._path_values[PATH_LEVELS[self._level_index]] = None
-        self.__clear_deeper(self._level_index + 1)
+        self._level_index = level_index
+        self._path_values[PATH_LEVELS[level_index]] = None
+        self.__clear_deeper(level_index + 1)
         self.activate()
 
     def __clear_deeper(self, start_index: int) -> None:
@@ -253,16 +243,14 @@ class SequentialBrowser(Browser):
 
     def __update_header(self) -> None:
         current_level = LEVELS[self._level_index]
-        self._view.set_title(LEVEL_TITLES[current_level])
-        self._title_label.set_text(LEVEL_TITLES[current_level])
-        values = []
-        for tag in PATH_LEVELS:
+        self._view.set_title("")
+        for index, tag in enumerate(PATH_LEVELS):
             value = self._path_values[tag]
-            if value is None:
-                break
-            values.append(self.__display_value(value))
-        self._breadcrumb_label.set_text(" / ".join(values))
-        self._back_button.set_sensitive(self._level_index > 0)
+            label = self.__display_value(value) if value is not None else ""
+            button = self._breadcrumb_buttons[tag]
+            button.set_label(label)
+            button.set_tooltip_text(label)
+            button.set_sensitive(index < self._level_index)
 
     def __display_value(self, value: str) -> str:
         if value == UNKNOWN_VALUE:

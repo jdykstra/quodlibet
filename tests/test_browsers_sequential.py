@@ -42,6 +42,13 @@ SONGS = [
 
 
 class TSequentialBrowser(TestCase):
+    def _breadcrumb_order(self):
+        return [
+            tag for button in self.bar._breadcrumb_buttons["genre"].get_parent().get_children()
+            for tag, candidate in self.bar._breadcrumb_buttons.items()
+            if candidate is button
+        ]
+
     def setUp(self):
         config.init()
         library = SongLibrary()
@@ -68,7 +75,8 @@ class TSequentialBrowser(TestCase):
     def test_starts_on_genres(self):
         with visible(self.container):
             self.bar.activate()
-            self.assertEqual(self.bar._title_label.get_text(), "Genres")
+            self.assertEqual(self.bar._view._column.get_title(), "")
+            self.assertEqual(self._breadcrumb_order(), ["genre", "artist", "album"])
             self.assertEqual(self.bar._view.get_row_labels(), ["Jazz", "Rock"])
             self.assertEqual(self.bar._stack.get_visible_child_name(), "browser")
 
@@ -77,8 +85,11 @@ class TSequentialBrowser(TestCase):
             self.bar.activate()
             self.bar._view.set_cursor(Gtk.TreePath((1,)))
             run_gtk_loop()
-            self.assertEqual(self.bar._title_label.get_text(), "Genres")
-            self.assertEqual(self.bar._breadcrumb_label.get_text(), "")
+            self.assertEqual(self.bar._view._column.get_title(), "")
+            self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "")
+            self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "")
+            self.assertEqual(self.bar._breadcrumb_buttons["album"].get_label(), "")
+            self.assertFalse(self.bar._breadcrumb_buttons["genre"].get_sensitive())
 
     def test_row_activation_advances(self):
         with visible(self.container):
@@ -86,19 +97,45 @@ class TSequentialBrowser(TestCase):
             self.bar._view.set_cursor(Gtk.TreePath((1,)))
             self.bar._view.row_activated(Gtk.TreePath((1,)), self.bar._view.get_column(0))
             run_gtk_loop()
-            self.assertEqual(self.bar._title_label.get_text(), "Artists")
-            self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock")
+            self.assertEqual(self.bar._view._column.get_title(), "")
+            self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "Rock")
+            self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "")
+            self.assertTrue(self.bar._breadcrumb_buttons["genre"].get_sensitive())
+            self.assertFalse(self.bar._breadcrumb_buttons["artist"].get_sensitive())
             self.assertEqual(self.bar._view.get_row_labels(), ["Artist A", "Unknown"])
 
     def test_back_returns_to_previous_level(self):
         with visible(self.container):
             self.bar.filter("genre", ["Rock"])
             run_gtk_loop()
-            self.assertEqual(self.bar._title_label.get_text(), "Artists")
-            self.bar._back_button.clicked()
+            self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "Rock")
+            self.bar._breadcrumb_buttons["genre"].clicked()
             run_gtk_loop()
-            self.assertEqual(self.bar._title_label.get_text(), "Genres")
-            self.assertEqual(self.bar._breadcrumb_label.get_text(), "")
+            self.assertEqual(self.bar._view._column.get_title(), "")
+            self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "")
+
+    def test_artist_breadcrumb_returns_to_artist_list(self):
+        with visible(self.container):
+            self.bar.filter("genre", ["Rock"])
+            self.bar.filter("artist", ["Artist A"])
+            run_gtk_loop()
+            self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "Artist A")
+            self.bar._breadcrumb_buttons["artist"].clicked()
+            run_gtk_loop()
+            self.assertEqual(self.bar._view._column.get_title(), "")
+            self.assertEqual(self.bar._view.get_row_labels(), ["Artist A", "Unknown"])
+
+    def test_album_breadcrumb_returns_to_album_list(self):
+        with visible(self.container):
+            self.bar.filter("genre", ["Rock"])
+            self.bar.filter("artist", ["Artist A"])
+            self.bar.filter("album", ["Album A1"])
+            run_gtk_loop()
+            self.assertEqual(self.bar._breadcrumb_buttons["album"].get_label(), "Album A1")
+            self.bar._breadcrumb_buttons["album"].clicked()
+            run_gtk_loop()
+            self.assertEqual(self.bar._view._column.get_title(), "")
+            self.assertEqual(self.bar._view.get_row_labels(), ["Album A1", "Album A2 With A Very Long Name"])
 
     def test_album_activation_shows_song_page(self):
         with visible(self.container):
@@ -107,7 +144,7 @@ class TSequentialBrowser(TestCase):
             self.bar.filter("album", ["Album A1"])
             run_gtk_loop()
             self.assertEqual(self.last, [SONGS[0]])
-            self.assertEqual(self.bar._title_label.get_text(), "Songs")
+            self.assertEqual(self.bar._breadcrumb_buttons["album"].get_label(), "Album A1")
 
     def test_filter_text_limits_visible_rows(self):
         with visible(self.container):
@@ -122,8 +159,9 @@ class TSequentialBrowser(TestCase):
             self.assertEqual(self.bar._view.get_row_labels(), ["Artist A", "Unknown"])
             self.bar.filter("artist", [UNKNOWN_VALUE])
             run_gtk_loop()
-            self.assertEqual(self.bar._title_label.get_text(), "Albums")
-            self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock / Unknown")
+            self.assertEqual(self.bar._view._column.get_title(), "")
+            self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "Rock")
+            self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "Unknown")
             self.assertEqual(self.bar._view.get_row_labels(), ["Album Unknown"])
 
     def test_restore_rebuilds_path(self):
@@ -133,5 +171,6 @@ class TSequentialBrowser(TestCase):
         self.bar.unfilter()
         self.bar.restore()
         self.bar.activate()
-        self.assertEqual(self.bar._title_label.get_text(), "Albums")
-        self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock / Artist A")
+        self.assertEqual(self.bar._view._column.get_title(), "")
+        self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "Rock")
+        self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "Artist A")
