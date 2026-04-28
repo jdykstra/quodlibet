@@ -405,9 +405,10 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
         return menu
 
     def __init__(self, library, player=None, update=False, model_cls=PlaylistModel,
-                 sortable: bool = True):
+                 sortable: bool = True, single_click_activate: bool = False):
         super().__init__()
         self.sortable = sortable
+        self._single_click_activate = single_click_activate
         self._register_instance(SongList)
         self.set_model(model_cls())
         self.info = SongSelectionInfo(self)
@@ -435,6 +436,7 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
             connect_destroy(player, "error", lambda *x: self.__redraw_current())
 
         self.connect("button-press-event", self.__button_press, library)
+        self.connect("button-release-event", self.__button_release)
         self.connect("key-press-event", self.__key_press, library, player)
 
         self.setup_drop(library)
@@ -656,6 +658,25 @@ class SongList(AllTreeView, SongListDnDMixin, DragScroll, util.InstanceTracker):
             if rating <= precision and song("~#rating") == precision:
                 rating = 0.0
             self.__set_rating(rating, [song], librarian)
+
+    def __button_release(self, view, event):
+        if not self._single_click_activate:
+            return False
+        if event.button != Gdk.BUTTON_PRIMARY or event.window != self.get_bin_window():
+            return False
+
+        x, y = map(int, [event.x, event.y])
+        try:
+            path, col, cellx, celly = view.get_path_at_pos(x, y)
+        except TypeError:
+            return False
+
+        if getattr(col, "header_name", None) == "~rating":
+            return False
+
+        self.set_cursor(path, col, False)
+        self.row_activated(path, col)
+        return False
 
     def __set_rating(self, value, songs, librarian):
         count = len(songs)

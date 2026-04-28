@@ -253,7 +253,8 @@ class LibraryBrowser(Window, util.InstanceTracker, PersistentWindowMixin):
         self.set_title(browser_cls.name + " - Quod Libet")
         self.add(Gtk.VBox())
 
-        view = SongList(library, update=True)
+        view = SongList(library, update=True,
+                single_click_activate=browser_cls.songlist_single_click_activate)
         view.info.connect("changed", self.__set_totals)
         self.songlist = view
         self.songlist.sortable = not browser_cls.can_reorder

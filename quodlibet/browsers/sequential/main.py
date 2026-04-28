@@ -206,6 +206,7 @@ class SequentialBrowser(Browser):
     accelerated_name = _("_Sequential Browser")
     keys = ["Sequential", "SequentialBrowser"]
     priority = 5
+    songlist_single_click_activate = True
 
     def __init__(self, library):
         super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)

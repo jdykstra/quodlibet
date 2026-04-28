@@ -131,6 +131,9 @@ class TSongList(TestCase):
         self.assertEqual(self.songlist.get_search_column(), 0)
         self.assertTrue(self.songlist.get_enable_search())
 
+    def test_single_click_activate_defaults_off(self):
+        self.assertFalse(self.songlist._single_click_activate)
+
     def test_set_songs(self):
         self.songlist.set_songs([], sorted=True)
         self.songlist.set_songs([], sorted=False)
