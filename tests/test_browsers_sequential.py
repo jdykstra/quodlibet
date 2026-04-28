@@ -84,10 +84,10 @@ class TSequentialBrowser(TestCase):
             self.assertEqual(self.bar._view.get_row_labels(), ["Jazz", "Rock"])
             self.assertEqual(self.bar._stack.get_visible_child_name(), "browser")
 
-    def test_selection_does_not_advance(self):
+    def test_selection_does_not_advance_until_click(self):
         with visible(self.container):
             self.bar.activate()
-            self.bar._view.set_cursor(Gtk.TreePath((1,)))
+            self.bar._view.set_cursor_for_key("Rock")
             run_gtk_loop()
             self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "genre")
             self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "artist")
@@ -98,7 +98,7 @@ class TSequentialBrowser(TestCase):
             self.assertFalse(self.bar._breadcrumb_buttons["album"].get_visible())
             self.assertFalse(self.bar._breadcrumb_buttons["genre"].get_sensitive())
 
-    def test_row_activation_advances(self):
+    def test_single_click_advances(self):
         with visible(self.container):
             self.bar.activate()
             self.bar._view.set_cursor_for_key("Rock")

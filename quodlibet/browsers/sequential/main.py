@@ -70,6 +70,7 @@ class DrilldownView(AllTreeView):
         self.set_search_column(0)
         self.set_enable_search(True)
         self.connect("size-allocate", self.__size_allocate)
+        self.connect("button-release-event", self.__button_released)
 
     def __search_func(self, model, column, key, iter_, data):
         for column_index in range(self._visible_columns):
@@ -85,6 +86,19 @@ class DrilldownView(AllTreeView):
         self._visible_columns = column_count
         self.__rebuild_columns()
         self.__populate_model()
+
+    def __button_released(self, widget, event):
+        if event.button != 1 or event.window is not self.get_bin_window():
+            return False
+
+        path_info = self.get_path_at_pos(int(event.x), int(event.y))
+        if path_info is None:
+            return False
+
+        path, column, cell_x, cell_y = path_info
+        self.set_cursor(path, column, False)
+        self.row_activated(path, column)
+        return False
 
     def __column_count_for_width(self, width: int) -> int:
         if width <= 0 or not self._rows:
