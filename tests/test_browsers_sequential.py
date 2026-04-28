@@ -42,11 +42,14 @@ SONGS = [
 
 
 class TSequentialBrowser(TestCase):
+    def _breadcrumb_box(self):
+        return self.bar._breadcrumb_buttons["genre"].get_parent().get_parent()
+
     def _breadcrumb_order(self):
         return [
-            tag for slot in self.bar._breadcrumb_box.get_children()
-            for tag, candidate in self.bar._breadcrumb_slots.items()
-            if candidate is slot
+            tag for slot in self._breadcrumb_box().get_children()
+            for tag, button in self.bar._breadcrumb_buttons.items()
+            if button.get_parent() is slot
         ]
 
     def setUp(self):
@@ -75,9 +78,8 @@ class TSequentialBrowser(TestCase):
     def test_starts_on_genres(self):
         with visible(self.container):
             self.bar.activate()
-            self.assertEqual(self.bar._view._column.get_title(), "")
             self.assertEqual(self._breadcrumb_order(), ["genre", "artist", "album"])
-            self.assertFalse(self.bar._breadcrumb_box.get_homogeneous())
+            self.assertFalse(self._breadcrumb_box().get_homogeneous())
             self.assertEqual(self.bar._view.get_row_labels(), ["Jazz", "Rock"])
             self.assertEqual(self.bar._stack.get_visible_child_name(), "browser")
 
@@ -86,7 +88,6 @@ class TSequentialBrowser(TestCase):
             self.bar.activate()
             self.bar._view.set_cursor(Gtk.TreePath((1,)))
             run_gtk_loop()
-            self.assertEqual(self.bar._view._column.get_title(), "")
             self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "genre")
             self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "artist")
             self.assertEqual(self.bar._breadcrumb_buttons["album"].get_label(), "album")
@@ -102,7 +103,6 @@ class TSequentialBrowser(TestCase):
             self.bar._view.set_cursor(Gtk.TreePath((1,)))
             self.bar._view.row_activated(Gtk.TreePath((1,)), self.bar._view.get_column(0))
             run_gtk_loop()
-            self.assertEqual(self.bar._view._column.get_title(), "")
             self.assertEqual(self.bar._breadcrumb_buttons["genre"].get_label(), "genre")
             self.assertEqual(self.bar._breadcrumb_buttons["artist"].get_label(), "artist")
             self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock")
@@ -119,7 +119,6 @@ class TSequentialBrowser(TestCase):
             self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock")
             self.bar._breadcrumb_buttons["genre"].clicked()
             run_gtk_loop()
-            self.assertEqual(self.bar._view._column.get_title(), "")
             self.assertEqual(self.bar._breadcrumb_label.get_text(), "")
 
     def test_artist_breadcrumb_returns_to_artist_list(self):
@@ -133,7 +132,6 @@ class TSequentialBrowser(TestCase):
             self.assertFalse(self.bar._breadcrumb_buttons["album"].get_visible())
             self.bar._breadcrumb_buttons["artist"].clicked()
             run_gtk_loop()
-            self.assertEqual(self.bar._view._column.get_title(), "")
             self.assertEqual(self.bar._view.get_row_labels(), ["Artist A", "Unknown"])
             self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock")
 
@@ -147,7 +145,6 @@ class TSequentialBrowser(TestCase):
             self.assertTrue(self.bar._breadcrumb_buttons["album"].get_visible())
             self.bar._breadcrumb_buttons["album"].clicked()
             run_gtk_loop()
-            self.assertEqual(self.bar._view._column.get_title(), "")
             self.assertEqual(self.bar._view.get_row_labels(), ["Album A1", "Album A2 With A Very Long Name"])
             self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock / Artist A")
 
@@ -173,7 +170,6 @@ class TSequentialBrowser(TestCase):
             self.assertEqual(self.bar._view.get_row_labels(), ["Artist A", "Unknown"])
             self.bar.filter("artist", [UNKNOWN_VALUE])
             run_gtk_loop()
-            self.assertEqual(self.bar._view._column.get_title(), "")
             self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock / Unknown")
             self.assertEqual(self.bar._view.get_row_labels(), ["Album Unknown"])
 
@@ -184,5 +180,4 @@ class TSequentialBrowser(TestCase):
         self.bar.unfilter()
         self.bar.restore()
         self.bar.activate()
-        self.assertEqual(self.bar._view._column.get_title(), "")
         self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock / Artist A")

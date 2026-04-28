@@ -21,12 +21,6 @@ from quodlibet.util.library import background_filter
 
 LEVELS = ("genre", "artist", "album", "song")
 PATH_LEVELS = LEVELS[:-1]
-LEVEL_TITLES = {
-    "genre": _("Genres"),
-    "artist": _("Artists"),
-    "album": _("Albums"),
-    "song": _("Songs"),
-}
 UNKNOWN_VALUE = "__sequential_unknown__"
 
 
@@ -71,8 +65,6 @@ class DrilldownView(AllTreeView):
 
         column.set_cell_data_func(renderer, text_cdf)
         self.append_column(column)
-        self._column = column
-
         self.set_model(Gtk.ListStore(object))
         self.set_search_equal_func(self.__search_func, None)
         self.set_search_column(0)
@@ -81,9 +73,6 @@ class DrilldownView(AllTreeView):
     def __search_func(self, model, column, key, iter_, data):
         row = model.get_value(iter_, 0)
         return not row.contains_text(key)
-
-    def set_title(self, title: str) -> None:
-        self._column.set_title(title)
 
     def set_rows(self, rows: list[DrilldownRow], selected_key: str | None) -> None:
         model = self.get_model()
@@ -120,7 +109,6 @@ class SequentialBrowser(Browser):
         super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
 
         self._library = library
-        self._query = None
         self._query_filter = lambda song: True
         self._level_index = 0
         self._path_values = {tag: None for tag in PATH_LEVELS}
@@ -138,9 +126,7 @@ class SequentialBrowser(Browser):
 
         header = Gtk.Box(spacing=3, orientation=Gtk.Orientation.VERTICAL)
         breadcrumb_box = Gtk.Box(spacing=6, homogeneous=False)
-        self._breadcrumb_box = breadcrumb_box
         self._breadcrumb_buttons = {}
-        self._breadcrumb_slots = {}
         for index, tag in enumerate(PATH_LEVELS):
             slot = Gtk.Box()
             button = Gtk.Button(label=tag)
@@ -155,7 +141,6 @@ class SequentialBrowser(Browser):
             slot.pack_start(button, True, True, 0)
             breadcrumb_box.pack_start(slot, True, True, 0)
             self._breadcrumb_buttons[tag] = button
-            self._breadcrumb_slots[tag] = slot
         header.pack_start(breadcrumb_box, True, True, 0)
 
         breadcrumb_label = Gtk.Label(xalign=0.0)
@@ -258,8 +243,6 @@ class SequentialBrowser(Browser):
         self._stack.set_visible_child(page)
 
     def __update_header(self) -> None:
-        current_level = LEVELS[self._level_index]
-        self._view.set_title("")
         values = []
         for index, tag in enumerate(PATH_LEVELS):
             value = self._path_values[tag]
@@ -300,13 +283,17 @@ class SequentialBrowser(Browser):
         star = dict.fromkeys(SongList.star)
         star.update(dict.fromkeys(PEOPLE))
         query = self._search.get_query(star.keys())
-        self._query = query if query.is_parsable else None
         self._query_filter = query.search if query.is_parsable else (lambda song: True)
         songs = list(filter(self._query_filter, self._library))
         bg = background_filter()
         if bg:
             songs = list(filter(bg, songs))
         return songs
+
+    def __normalize_tag(self, tag: str) -> str:
+        if tag in PEOPLE:
+            return "artist"
+        return tag
 
     def __songs_for_depth(self, depth: int):
         songs = self.__base_songs()
@@ -398,11 +385,10 @@ class SequentialBrowser(Browser):
         return self._get_text()
 
     def can_filter_tag(self, tag):
-        return tag in PATH_LEVELS or tag in PEOPLE
+        return self.__normalize_tag(tag) in PATH_LEVELS
 
     def filter(self, tag, values):
-        if tag in PEOPLE:
-            tag = "artist"
+        tag = self.__normalize_tag(tag)
         if tag not in PATH_LEVELS:
             return
         chosen = next(iter(values), None)
@@ -413,8 +399,7 @@ class SequentialBrowser(Browser):
         self.activate()
 
     def list(self, tag):
-        if tag in PEOPLE:
-            tag = "artist"
+        tag = self.__normalize_tag(tag)
         if tag not in PATH_LEVELS:
             return super().list(tag)
         songs = self.__songs_for_depth(PATH_LEVELS.index(tag))
