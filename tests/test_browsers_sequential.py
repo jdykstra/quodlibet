@@ -77,6 +77,7 @@ class TSequentialBrowser(TestCase):
             self.bar.activate()
             self.assertEqual(self.bar._view._column.get_title(), "")
             self.assertEqual(self._breadcrumb_order(), ["genre", "artist", "album"])
+            self.assertFalse(self.bar._breadcrumb_box.get_homogeneous())
             self.assertEqual(self.bar._view.get_row_labels(), ["Jazz", "Rock"])
             self.assertEqual(self.bar._stack.get_visible_child_name(), "browser")
 

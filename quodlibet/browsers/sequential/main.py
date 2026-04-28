@@ -137,12 +137,18 @@ class SequentialBrowser(Browser):
         self.pack_start(Align(search, left=6, right=6), False, True, 0)
 
         header = Gtk.Box(spacing=6)
-        breadcrumb_box = Gtk.Box(spacing=6, homogeneous=True)
+        breadcrumb_box = Gtk.Box(spacing=6, homogeneous=False)
+        self._breadcrumb_box = breadcrumb_box
         self._breadcrumb_buttons = {}
         for index, tag in enumerate(PATH_LEVELS):
             button = Gtk.Button(label="")
             button.set_size_request(52, 52)
             button.set_relief(Gtk.ReliefStyle.NONE)
+            child = button.get_child()
+            if isinstance(child, Gtk.Label):
+                child.set_ellipsize(Pango.EllipsizeMode.END)
+                child.set_single_line_mode(True)
+                child.set_max_width_chars(24)
             button.connect("clicked", self.__breadcrumb_clicked, index)
             breadcrumb_box.pack_start(button, True, True, 0)
             self._breadcrumb_buttons[tag] = button
