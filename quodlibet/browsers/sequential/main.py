@@ -24,7 +24,7 @@ from quodlibet.util.library import background_filter
 LEVELS = ("genre", "artist", "album", "song")
 PATH_LEVELS = LEVELS[:-1]
 UNKNOWN_VALUE = "__sequential_unknown__"
-MAX_LABEL_CHARS = 30
+MAX_LABEL_CHARS = 40
 GRID_COLUMN_WIDTH = 260
 EXTRA_ROW_SPACING = 10
 
@@ -42,8 +42,7 @@ class DrilldownRow:
         return cls(f"{unknown_sort}{label.casefold()}", key, label, count)
 
     def get_markup(self, max_chars: int = MAX_LABEL_CHARS) -> str:
-        text = GLib.markup_escape_text(self.__display_label(max_chars))
-        return "%s <span alpha='60%%'>(%d)</span>" % (text, self.count)
+        return GLib.markup_escape_text(self.__display_label(max_chars))
 
     def __display_label(self, max_chars: int) -> str:
         if len(self.label) <= max_chars:
@@ -150,8 +149,8 @@ class DrilldownView(AllTreeView):
         grid = [[None for _ in range(self._visible_columns)] for _ in range(rows_per_column)]
         selected_position = None
         for index, row in enumerate(self._rows):
-            row_index = index % rows_per_column
-            column_index = index // rows_per_column
+            row_index = index // self._visible_columns
+            column_index = index % self._visible_columns
             grid[row_index][column_index] = row
             if row.key == self._selected_key:
                 selected_position = (row_index, column_index)

@@ -183,7 +183,7 @@ class TSequentialBrowser(TestCase):
         self.bar.activate()
         self.assertEqual(self.bar._breadcrumb_label.get_text(), "Rock / Artist A")
 
-    def test_multi_column_layout_fills_down_first(self):
+    def test_multi_column_layout_fills_across_first(self):
         rows = [
             DrilldownRow.create(f"genre-{index}", f"Genre {index}", 1)
             for index in range(6)
@@ -197,16 +197,16 @@ class TSequentialBrowser(TestCase):
         model = self.bar._view.get_model()
         self.assertEqual(len(self.bar._view.get_columns()), 2)
         self.assertEqual(model[0][0].label, "Genre 0")
-        self.assertEqual(model[1][0].label, "Genre 1")
-        self.assertEqual(model[2][0].label, "Genre 2")
-        self.assertEqual(model[0][1].label, "Genre 3")
-        self.assertEqual(model[1][1].label, "Genre 4")
+        self.assertEqual(model[0][1].label, "Genre 1")
+        self.assertEqual(model[1][0].label, "Genre 2")
+        self.assertEqual(model[1][1].label, "Genre 3")
+        self.assertEqual(model[2][0].label, "Genre 4")
         self.assertEqual(model[2][1].label, "Genre 5")
 
-    def test_row_markup_truncates_to_thirty_characters(self):
+    def test_row_markup_truncates_to_forty_characters_without_counts(self):
         row = DrilldownRow.create(
             "album-1",
-            "12345678901234567890123456789012345",
+            "123456789012345678901234567890123456789012345",
             1,
         )
-        self.assertIn("12345678901234567890123456789…", row.get_markup())
+        self.assertEqual(row.get_markup(), "123456789012345678901234567890123456789…")
