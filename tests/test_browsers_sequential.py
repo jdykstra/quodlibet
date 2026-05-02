@@ -98,6 +98,13 @@ class TSequentialBrowser(TestCase):
             self.assertFalse(self.bar._breadcrumb_buttons["album"].get_visible())
             self.assertFalse(self.bar._breadcrumb_buttons["genre"].get_sensitive())
 
+    def test_initial_rows_do_not_force_first_cursor(self):
+        with visible(self.container):
+            self.bar.activate()
+            path, column = self.bar._view.get_cursor()
+            self.assertIsNone(path)
+            self.assertIsNone(column)
+
     def test_single_click_advances(self):
         with visible(self.container):
             self.bar.activate()

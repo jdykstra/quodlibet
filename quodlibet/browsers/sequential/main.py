@@ -163,8 +163,6 @@ class DrilldownView(AllTreeView):
             path = Gtk.TreePath((selected_position[0],))
             column = self._tree_columns[selected_position[1]]
             self.set_cursor(path, column, False)
-        elif self._rows:
-            self.set_cursor(Gtk.TreePath((0,)), self._tree_columns[0], False)
 
     def set_rows(self, rows: list[DrilldownRow], selected_key: str | None) -> None:
         self._rows = list(rows)
