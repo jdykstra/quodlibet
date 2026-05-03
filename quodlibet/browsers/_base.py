@@ -266,6 +266,11 @@ class Browser(Gtk.Box, Filter):
     the browser is.
     """
 
+    songlist_single_click_activate = False
+    """Whether the song list should activate rows on a single primary-button
+    release instead of relying on the default row-activated behavior.
+    """
+
     def menu(self, songs, library, items) -> Gtk.Menu:
         """This method returns a Gtk.Menu, probably a SongsMenu. After this
         menu is returned the SongList may modify it further.

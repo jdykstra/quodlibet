@@ -7,6 +7,7 @@ from gi.repository import Gtk
 
 from quodlibet import app
 from quodlibet.browsers.albums import AlbumList
+from quodlibet.browsers.sequential.main import SequentialBrowser
 from quodlibet.browsers.tracks import TrackList
 from quodlibet.formats import AudioFile
 from quodlibet.library import SongLibrarian
@@ -47,6 +48,11 @@ class TLibraryBrowser(TestCase):
         widget._menu(songlist, self.library)
         assert len(called) == 1, "Should have called menu once"
         assert len(called[0][0].get_children()) > 6, "doesn't seem enough items"
+
+    def test_sequential_enables_single_click_songlist_activation(self):
+        win = LibraryBrowser(SequentialBrowser, self.library, NullPlayer())
+        self.assertTrue(win.songlist._single_click_activate)
+        win.destroy()
 
     def tearDown(self):
         destroy_fake_app()

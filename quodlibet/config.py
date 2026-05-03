@@ -134,6 +134,10 @@ INITIAL: dict[str, dict[str, str]] = {
         # selected pane values
         "pane_selection": "",
 
+        # sequential browser state
+        "sequential_browser_level": "genre",
+        "sequential_browser_path": "",
+
         # equal pane width in paned browser
         "equal_pane_width": "true",
 

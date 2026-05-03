@@ -8,6 +8,7 @@ from quodlibet.library import SongFileLibrary, SongLibrarian
 from quodlibet.qltk.notif import TaskController
 from tests import TestCase, init_fake_app
 
+from quodlibet import browsers
 from quodlibet.qltk.quodlibetwindow import QuodLibetWindow, PlaybackErrorDialog
 from quodlibet import player
 from quodlibet import config
@@ -34,6 +35,16 @@ class TQuodLibetWindow(TestCase):
         pl = player.init_player("nullbe", lib.librarian)
         window = QuodLibetWindow(lib, pl, headless=True)
         assert window in window.windows
+        window.destroy()
+
+    def test_sequential_browser_enables_single_click_songlist(self):
+        lib = SongFileLibrary()
+        lib.librarian = SongLibrarian()
+        pl = player.init_player("nullbe", lib.librarian)
+        config.set("memory", "browser", browsers.name(browsers.get("Sequential")))
+
+        window = QuodLibetWindow(lib, pl, headless=True)
+        self.assertTrue(window.songlist._single_click_activate)
         window.destroy()
 
     def test_playback_error_dialog(self):
