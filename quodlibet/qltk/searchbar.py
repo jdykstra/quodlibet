@@ -100,12 +100,18 @@ class SearchBarBox(Gtk.Box):
     def set_text(self, text):
         """Set the text without firing any signals"""
 
+        if text == self._entry.get_text():
+            self._update_query_from(text)
+            return
+
         self.__deferred_changed.abort()
         self._update_query_from(text)
 
         # deactivate all signals and change the entry text
         self.__inhibit()
-        self._entry.set_text(text)
+        if self.__combo.get_active() != -1:
+            self.__combo.set_active(-1)
+        self._entry.get_buffer().set_text(text, len(text))
         self.__uninhibit()
 
     def _update_query_from(self, text):

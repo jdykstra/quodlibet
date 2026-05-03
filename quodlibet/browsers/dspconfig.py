@@ -8,7 +8,15 @@ from gi.repository import GObject
 from quodlibet import qltk
 from quodlibet.qltk.menubutton import MenuButton
 
-from ..extapis.dsp import DspController, dsp_controller
+try:
+    from ..extapis.dsp import DspController, dsp_controller
+except ModuleNotFoundError as error:
+    DspController = None
+    dsp_controller = None
+    _DSP_IMPORT_ERROR = error
+else:
+    _DSP_IMPORT_ERROR = None
+
 import quodlibet.qltk.touch as tt
 
 
@@ -43,6 +51,11 @@ class ConfigChooser(Gtk.VBox):
         """
         Create rectangle buttons for each configuration file, colored red if unselected and green if selected.
         """
+        if dsp_controller is None:
+            error_label = Gtk.Label(label=f"Error: {_DSP_IMPORT_ERROR}")
+            self.pack_start(error_label, False, False, 0)
+            return
+
         try:
             dsp_controller.connect()
             self.config_dir, config_files = dsp_controller.get_configs()
@@ -119,6 +132,12 @@ class DspStatusPane(Gtk.VBox):
         self.start_auto_refresh()  # Start auto-refresh immediately
 
     def update_status(self):
+        if dsp_controller is None:
+            self.status_tile.set_label("Unavailable")
+            self.status_tile.set_color(tt.TouchTile.RED)
+            self.status_tile.queue_draw()
+            return
+
         try:
             dsp_controller.connect()
             state = dsp_controller.general.state()
@@ -203,5 +222,9 @@ class DspWindowOpener(Gtk.HBox):
             window = DspControlWindow(browser)
             window.show()
         button.connect("clicked", on_button_clicked)
+
+        if dsp_controller is None:
+            button.set_sensitive(False)
+            button.set_tooltip_text(f"DSP unavailable: {_DSP_IMPORT_ERROR}")
 
         self.pack_start(button, True, True, 0)

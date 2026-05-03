@@ -117,10 +117,12 @@ def init_fake_app() -> None:
     from quodlibet.player.nullbe import NullPlayer
     from quodlibet.library import SongFileLibrary
     from quodlibet.library.librarians import SongLibrarian
+    from quodlibet.qltk.notif import TaskController
     from quodlibet.qltk.quodlibetwindow import QuodLibetWindow, PlayerOptions
     from quodlibet.util.cover import CoverManager
 
     browsers.init()
+    TaskController.default_instance = TaskController()
     app.name = "Quod Libet"
     app.id = "io.github.quodlibet.QuodLibet"
     app.player = NullPlayer()
@@ -133,11 +135,15 @@ def init_fake_app() -> None:
 
 def destroy_fake_app() -> None:
     from quodlibet import app
+    from quodlibet.qltk.notif import TaskController
 
     app.window.destroy()
     app.library.destroy()
     app.library.librarian.destroy()
     app.player.destroy()
+
+    TaskController.default_instance.parent = None
+    TaskController.default_instance = TaskController()
 
     app.window = app.library = app.player = app.name = app.id = None
     app.cover_manager = None
