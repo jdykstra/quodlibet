@@ -1,3 +1,4 @@
+
 import serial
 import time
 
@@ -32,7 +33,12 @@ class PowerController:
                     baudrate=self.baudrate,
                     timeout=self.timeout
                 )
-                time.sleep(0.5)  # Allow time for connection to stabilize
+                # Opening the serial port asserts DTR, which resets the Arduino.
+                # The Arduino sketch runs delay(2000) in setup() before it is ready
+                # to accept commands (see Power_Controller.ino, setup()).  Add margin
+                # for the bootloader (~0.5-1s) on top of that.  This delay could be
+                # reduced if the delay(2000)/while(!Serial) in the sketch were shortened.
+                time.sleep(3.0)
                 self._serial.reset_input_buffer()
             except serial.SerialException as e:
                 raise ConnectionError(f"Failed to connect to power controller on {self.port}: {e}")
@@ -71,7 +77,7 @@ class PowerController:
             response = self._serial.readline().decode().strip()
             print_d(f"Power controller:  Received response: {repr(response)}")
 
-            if response not in ["OK", "ERR"]:
+            if response != "OK" and not response.startswith("ERR"):
                 raise ValueError(f"Unexpected response from power controller: {response}")
 
             return response
