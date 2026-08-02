@@ -441,6 +441,11 @@ class SequentialBrowser(Browser):
             songs = self.__songs_for_depth(self._level_index)
             tag = PATH_LEVELS[self._level_index]
             rows = self.__build_rows(tag, songs)
+            if tag in ("artist", "album") and len(rows) == 1:
+                self._path_values[tag] = rows[0].key
+                self._level_index = min(self._level_index + 1, len(LEVELS) - 1)
+                self.__refresh_view()
+                return
             self._view.set_rows(rows, self._path_values[tag])
         self.__sync_page()
         self.__update_header()
