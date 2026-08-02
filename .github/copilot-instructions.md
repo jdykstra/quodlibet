@@ -25,6 +25,10 @@ Git branch 'music-server-main' is a personal branch that will never be merged in
   - Plugin discovery via `quodlibet/plugins/__init__.py` ModuleScanner
   - Use `PluginNotSupportedError` to hide platform-specific plugins
 
+Base classes for UX are in quodlibet/qltk.  quodlibetwindow.py manages the application window, 
+which contains the volume widget, a browser, and various controls.
+Interfaces to other processes and machines are in quodlibet/extapis.  This includes the power controller link.
+
 ### Library Management
 - **Songs storage**: `~/.local/share/quodlibet/songs` (configurable)
 - **Config file**: `~/.config/quodlibet/config`

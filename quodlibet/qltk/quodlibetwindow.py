@@ -590,10 +590,15 @@ class VolumeMenu(Gtk.Menu):
         return super().popup(*args)
 
 class VolumeControl(Gtk.Scale):
+    # Smooth wheel behavior: keep the base step small, then scale it up
+    # so high-resolution wheel deltas still feel responsive.
+    scroll_base_increment = 0.01
+    scroll_event_ratio = 2.5
+
     def __init__(self, player):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
-        self.set_adjustment(Gtk.Adjustment.new(0, 0, 1, 0.05, 0.1, 0))
+        self.set_adjustment(Gtk.Adjustment.new(0, 0, 1, 0.01, 0.05, 0))
         self.set_inverted(True)
         self.set_digits(2)
         if gtk_version >= (3, 0):
@@ -610,6 +615,7 @@ class VolumeControl(Gtk.Scale):
             player.volume = config.getfloat("memory", "volume")
 
         self._id = self.connect('value-changed', self.__volume_changed, player)
+        self.connect('scroll-event', self.__on_scroll)
         self._id2 = player.connect('notify::volume', self.__volume_notify)
         self._id3 = player.connect('notify::mute', self.__mute_notify)
         player.notify("volume")
@@ -625,6 +631,21 @@ class VolumeControl(Gtk.Scale):
     
     # ?? This should be a configuration option, maybe with a UI.
     base_volume_level = 0.25
+
+    def __on_scroll(self, widget, event):
+        has_deltas, delta_x, delta_y = event.get_scroll_deltas()
+        if not has_deltas:
+            # Fall back to discrete directions if deltas aren't available
+            if event.direction == Gdk.ScrollDirection.UP:
+                delta_y = -1.0
+            elif event.direction == Gdk.ScrollDirection.DOWN:
+                delta_y = 1.0
+            else:
+                return False
+
+        increment = self.scroll_base_increment * self.scroll_event_ratio
+        self.set_value(self.get_value() + (delta_y * increment))
+        return True
 
     def __volume_changed(self, scale, player):
         player.handler_block(self._id2)
