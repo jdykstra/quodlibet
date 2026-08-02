@@ -23,6 +23,11 @@ def ensure_touch_css_loaded():
     .touch_tile {
         margin-bottom: 10px;
     }
+    .no-scrollbar scrollbar {
+        opacity: 0;
+        min-width: 0;
+        min-height: 0;
+    }
     '''
     style_provider = Gtk.CssProvider()
     style_provider.load_from_data(css)

@@ -257,7 +257,9 @@ class SequentialBrowser(Browser):
         self._view.connect("selection-changed", self.__selection_changed)
         scrolled = ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_overlay_scrolling(True)
         scrolled.set_shadow_type(Gtk.ShadowType.IN)
+        scrolled.get_style_context().add_class("no-scrollbar")
         scrolled.add(self._view)
         self._browser_page = scrolled
 
