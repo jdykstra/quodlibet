@@ -289,9 +289,9 @@ class Browser(Gtk.Box, Filter):
     _transition_timeout = None
     
     def _change_opacity(self, amount):
-        new_opacity = self.get_opacity() + amount
+        new_opacity = min(1.0, max(0.0, self.get_opacity() + amount))
         self.set_opacity(new_opacity)
-        more_to_do = new_opacity > 0.0 and new_opacity < 1.0
+        more_to_do = 0.0 < new_opacity < 1.0
         if not more_to_do:
             self._transition_timeout = None
         return more_to_do
@@ -299,6 +299,8 @@ class Browser(Gtk.Box, Filter):
     def _start_transition(self, show):
         if (self._transition_timeout is not None):
             GLib.source_remove(self._transition_timeout)
+        # Insensitive widgets ignore mouse and keyboard input while faded out.
+        self.set_sensitive(show)
         self._transition_timeout = GLib.timeout_add(self.recall_interval*1000, self._change_opacity, self.step_amount if show else -self.step_amount)
     
     def hide(self):
